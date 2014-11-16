@@ -1,3 +1,3 @@
-This repository contains a variety of make-based workflows. 
+This repository contains a variety of make-based workflows.  
 
-Each makefile foo.mk is accompanied by an eaxample of ujsing it, foo.sh
+Each makefile foo.mk is accompanied by an example of using it, foo.sh
