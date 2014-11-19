@@ -35,13 +35,13 @@
 # --each run of this workflow (because its easy to accidentllay overwrite an existing file otherwise) 
 # mkdir /dataset/mydata/scratch/blastruns
 #
-# --The basic idea is that you "make" a target of myfile.blastout, in your new empty folder , and 
+# --The basic idea is that you "make" a target of myfile.fastqblastout, in your new empty folder , and 
 # --also tell make where to find "myfile"
 #
 # --dry run : 
-# make -n -f SeqBasics0.1.mk -d --no-builtin-rules data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  /dataset/mydata/scratch/blastruns/processed_S395Buccal-PG-25MG_S18_L001_R1_001.fastq.trimmed.blastout  > SeqBasics.log 2>&1
+# make -n -f SeqBasics0.1.mk -d --no-builtin-rules data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  /dataset/mydata/scratch/blastruns/processed_S395Buccal-PG-25MG_S18_L001_R1_001.fastq.trimmed.fastqblastout  > SeqBasics.log 2>&1
 # --actual run : 
-# make -f SeqBasics0.1.mk -d --no-builtin-rules data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  /dataset/mydata/scratch/blastruns/processed_S395Buccal-PG-25MG_S18_L001_R1_001.fastq.trimmed.blastout  > SeqBasics.log 2>&1
+# make -f SeqBasics0.1.mk -d --no-builtin-rules data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  /dataset/mydata/scratch/blastruns/processed_S395Buccal-PG-25MG_S18_L001_R1_001.fastq.trimmed.fastqblastout  > SeqBasics.log 2>&1
 #
 # blast all files in a folder
 # ==========================
@@ -50,16 +50,16 @@
 # --each run of this workflow
 # mkdir /dataset/mydata/scratch/blastruns
 #
-# --The basic idea is that you "make" a ("phony") target of "all_in_folder", tell make where the output should go, and  
+# --The basic idea is that you "make" a ("phony") target of "all_fastq_in_folder", tell make where the output should go, and  
 # --also tell make where to find all the files to process 
 #
 # --(note we use -j 8 to tell make to start processing up to 8 files concurrently. Each of these 8 will in turn be split by tardis to run on the 
 # --compute farm)
 # --For this target we need to specify the outputdir (for the single file target it is implicit)
 # --dry run :
-# make -n -f SeqBasics0.1.mk -d --no-builtin-rules -j 8 data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  outputdir=/dataset/mydata/scratch/blastruns all_in_folder  > SeqBasics.log 2>&1
+# make -n -f SeqBasics0.1.mk -d --no-builtin-rules -j 8 data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  outputdir=/dataset/mydata/scratch/blastruns all_fastq_in_folder  > SeqBasics.log 2>&1
 # --actual run :
-# make -f SeqBasics0.1.mk -d --no-builtin-rules -j 8 data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  outputdir=/dataset/mydata/scratch/blastruns all_in_folder  > SeqBasics.log 2>&1
+# make -f SeqBasics0.1.mk -d --no-builtin-rules -j 8 data_source_dir=/dataset/mydata/archive/140627_M02810_0023_000000000-A856J/processed_trimmed  outputdir=/dataset/mydata/scratch/blastruns all_fastq_in_folder  > SeqBasics.log 2>&1
 
 #############################################################################################
 # parameters  
@@ -73,7 +73,7 @@ other_tardis_options=
 
 
 #############################################################################################
-# target lists (to support processing all files in a folder -see the "all_in_folder" phony target below)
+# target lists (to support processing all files in a folder -see the "all_fastq_in_folder" phony target below)
 # for the given folder , we will process 
 # *.fastq
 # *.fastq.gz
@@ -89,24 +89,24 @@ other_tardis_options=
 # and then use this as your source folder. (This approach could also be used 
 # to process a subset of files in a folder)  
 #############################################################################################
-uncompressed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .blastout, $(notdir $(wildcard $(data_source_dir)/*.fastq))))
+uncompressed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .fastqblastout, $(notdir $(wildcard $(data_source_dir)/*.fastq))))
 # e.g. from a source file "processed_Undetermined_S0_L001_R2_001.fastq", this would generate a target (say)  
-# /dataset/mydata/scratch/blastruns/processed_Undetermined_S0_L001_R2_001.fastq.blastout
-uncompressed_trimmed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .blastout, $(notdir $(wildcard $(data_source_dir)/*.fastq.trimmed))))
-compressed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .blastout, $(notdir $(wildcard $(data_source_dir)/*.fastq.gz))))
-compressed_trimmed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .blastout, $(notdir $(wildcard $(data_source_dir)/*.fastq.trimmed.gz))))
+# /dataset/mydata/scratch/blastruns/processed_Undetermined_S0_L001_R2_001.fastq.fastqblastout
+uncompressed_trimmed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .fastqblastout, $(notdir $(wildcard $(data_source_dir)/*.fastq.trimmed))))
+compressed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .fastqblastout, $(notdir $(wildcard $(data_source_dir)/*.fastq.gz))))
+compressed_trimmed_fastq_blast_targets=$(addprefix $(outputdir)/, $(addsuffix .fastqblastout, $(notdir $(wildcard $(data_source_dir)/*.fastq.trimmed.gz))))
 
-.PHONY : all_in_folder
-all_in_folder: $(uncompressed_fastq_blast_targets) $(compressed_fastq_blast_targets) $(uncompressed_trimmed_fastq_blast_targets) $(compressed_trimmed_fastq_blast_targets)
+.PHONY : all_fastq_in_folder
+all_fastq_in_folder: $(uncompressed_fastq_blast_targets) $(compressed_fastq_blast_targets) $(uncompressed_trimmed_fastq_blast_targets) $(compressed_trimmed_fastq_blast_targets)
 
 
-%.blastout: 
+%.fastqblastout: 
 	~/zeromq/tardis.py -w -c $(tardis_chunk_size) -d $(*D) $(other_tardis_options) blastn -query _condition_fastq2fasta_input_$(data_source_dir)/$(*F) -task blastn -num_threads 2 -db $(blast_db) -evalue 1.0e-10 -outfmt \"7 qseqid sseqid sacc stitle pident length mismatch gapopen qstart qend sstart send evalue bitscore\" -max_target_seqs 1 -out _condition_text_output_$@ \> _condition_text_output_$@.stdout  2>&1
 
 ##############################################
 # specify the intermediate files to keep 
 ##############################################
-.PRECIOUS: %.blastout   
+.PRECIOUS: %.fastqblastout   
 
 ##############################################
 # cleaning - not yet doing this using make  
