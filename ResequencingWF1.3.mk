@@ -69,7 +69,6 @@ midstr=
 poststr=
 mytmp=/tmp
 adaptersFile=/dataset/AG_1000_bulls/active/adapters.txt
-
 #
 #*******************************************************************************************
 # project filename construction support examples
@@ -119,6 +118,14 @@ TARDIS_chunksize=300000
 #TARDIS_chunksize=1000 for testing small files
 TARDIS_workdir=$(mytmp)
 BWA_reference=/dataset/AFC_dairy_cows/active/1000_bulls/umd_3_1_reference_1000_bull_genomes.fa
+# note that if you specify the reference as (say) umd_3_1_reference_1000_bull_genomes.fa, then the following
+# files are expected to exist :
+# umd_3_1_reference_1000_bull_genomes.fa      umd_3_1_reference_1000_bull_genomes.fa.ann  umd_3_1_reference_1000_bull_genomes.fa.fai  umd_3_1_reference_1000_bull_genomes.fa.sa
+# umd_3_1_reference_1000_bull_genomes.fa.amb  umd_3_1_reference_1000_bull_genomes.fa.bwt  umd_3_1_reference_1000_bull_genomes.fa.pac
+#
+# (i.e. the sequence file should be there as well as the indexes (sequence file needed by GATK)
+#
+
 
 
 #*****************************************************************************************
