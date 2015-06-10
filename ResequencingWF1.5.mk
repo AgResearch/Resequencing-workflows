@@ -78,9 +78,34 @@ builddir=/not set
 # - so that the stem matches the lane number - this will not work for files that 
 # have a different barcode or date string. (The stem that is matched is only used 
 # internally - so it doesn't matter particularly what is matched)
+#
+# Sometimes samples are spread across completely different runs or lanes and a "link farm" approach
+# is needed to created a set of input files that can be matched. For example 
+# consider that we want to pull files from ....
+#
+#/dataset/BLGsheep/archive/NZGL01418_1/Raw/C6KJ6ANXX-1418-1-05-01_ATCACG_L008_R1_001.fastq.gz
+#/dataset/BLGsheep/archive/NZGL01418_1/Raw/C6KJ6ANXX-1418-1-05-01_ATCACG_L008_R2_001.fastq.gz
+#/dataset/BLGsheep/archive/NZGL01418_5/Raw/H2L55BCXX-1418-1_ATCACG_L002_R1_001.fastq.gz
+#/dataset/BLGsheep/archive/NZGL01418_5/Raw/H2L55BCXX-1418-1_ATCACG_L002_R2_001.fastq.gz
+#
+#we can achieve this by creating a folder containing shortcuts to the actual files, with a
+#consistent prefix in the link name...
+#
+#mkdir /dataset/AG_1000_sheep/scratch/general_processing_062015/linkfarms
+#mkdir /dataset/AG_1000_sheep/scratch/general_processing_062015/linkfarms/NZUKNM100017918713
+#for file in /dataset/BLGsheep/archive/NZGL01418_1/Raw/*ATCACG*.fastq.gz; do
+#   base=`basename $file`
+#   ln -s $file /dataset/AG_1000_sheep/scratch/general_processing_062015/linkfarms/NZUKNM100017918713/prefix$base
+#done
+#for file in /dataset/BLGsheep/archive/NZGL01418_5/Raw/*ATCACG*.fastq.gz; do
+#   base=`basename $file`
+#   ln -s $file /dataset/AG_1000_sheep/scratch/general_processing_062015/linkfarms/NZUKNM100017918713/prefix$base
+#done
+#
+#
+#./ResequencingWF1.5.sh -S NZUKNM100017918713 -D /dataset/AG_1000_sheep/scratch/general_processing_062015/linkfarms/NZUKNM100017918713  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p prefix -q 1 -r 2 -s _R -t _0
 # 
 # 
-
 # ******************************************************************************************
 # other variables (not project specific)
 # ******************************************************************************************
@@ -273,7 +298,8 @@ versions.log:
 # how to make the vcf
 ###############################################
 %.vcf: %.realignedbam
-	samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cvg - > $*.vcf 
+	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cvg - > $*.vcf 
+	samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cvg - > $*.vcf 
 
 
 ###############################################
@@ -283,7 +309,8 @@ versions.log:
 # vcf build so it includes all positions ?)
 ###############################################
 %.fullvcf: %.realignedbam
-	samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cg - > $*.fullvcf
+	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cg - > $*.fullvcf
+	samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cg - > $*.fullvcf
 
 
 
@@ -371,7 +398,6 @@ endif
 %.sortedbam: %.filteredbam
 	$(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G $<  -o $@
 %.singlessortedbam: %.singlesfilteredbam
-	#$(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G $(builddir)/$<  -o $(builddir)/$@
 	$(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G $<  -o $@
 
 ###############################################
@@ -379,10 +405,12 @@ endif
 # at this point to get those done as well 
 ###############################################
 %.filteredbam: %.bam 
-	$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $< -o $@ 
+	# do this is we want to filter - but no longer filtering here so just pass the unfiltered through 
+	#$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $< -o $@ 
+	ln -s $< $@ 
 %.singlesfilteredbam: %.singlesbam
-	#$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $(builddir)/$< -o $(builddir)/$@ 
-	$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $< -o $@ 
+	#$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $< -o $@ 
+	ln -s $< $@ 
 
 
 ###############################################
