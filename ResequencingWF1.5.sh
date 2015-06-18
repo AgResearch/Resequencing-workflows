@@ -142,7 +142,10 @@ fi
 
 
 
-# init tardis config file 
+# copy or init tardis config file 
+if [ -f .tardishrc ]; then
+   cp  .tardishrc $TEMP_DIR
+else
 echo "
 [tardish]
 
@@ -150,6 +153,7 @@ echo "
 job_template_name=condor_send_env_job
 shell_template_name=condor_shell
 " > $TEMP_DIR/.tardishrc
+fi
 
 # get the lane monikers string needed by the makefile 
 moniker_string=""
