@@ -115,8 +115,8 @@ RUN_FASTQC=fastqc
 RUN_SAMBAMBA=/dataset/AG_1000_bulls/active/bin/sambamba
 RUN_SAMTOOLS=samtools
 RUN_JAVA=/usr/bin/java
-#RUN_QUADTRIM=/dataset/hiseq/active/bin/quadtrim
-RUN_QUADTRIM=/home/mccullocha/mygit/Resequencing-workflows/quad_wrapper.sh
+RUN_QUADTRIM=/dataset/hiseq/active/bin/quad_wrapper.sh
+#RUN_QUADTRIM=/home/mccullocha/mygit/Resequencing-workflows/quad_wrapper.sh
 GATK=/dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar
 
 # variables for tardis and other apps
