@@ -183,10 +183,22 @@ else
 fi
 set +x
 
+if [ $? == 0 ]; then
+   echo "cleaning tardis/quadtrim tempdata"
+   set -x
+   find ${BUILD_DIR} -name "tardis*" -type d -exec rm -rf {} \;
+   set +x
+else
+   echo "(build appears to have failed so skipping the tardis/quadtrim clean)"
+fi
+
+
+
 # make a precis of the log file
 make -i -f ResequencingWF1.5.mk ${SAMPLE}.logprecis 
 # prepare a listing of software versions
 make -i -f ResequencingWF1.5.mk ${SAMPLE}.versions 
+
 
 cat ${SAMPLE}.logprecis
 

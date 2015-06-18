@@ -14,6 +14,8 @@
 #*****************************************************************************************
 # examples  
 #*****************************************************************************************
+# make -f ArchiveBuild1.5.mk -d --no-builtin-rules -j 8 builddir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796 archivedir=/dataset/AG_1000_sheep/archive/2015_processing_results/NZCPWF000001391796 tempdir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796tmp /dataset/AG_1000_sheep/archive/2015_processing_results/NZCPWF000001391796/NZCPWF000001391796.all
+# make -f ArchiveBuild1.5.mk builddir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796 clean
 #
 #
 # ******************************************************************************************
@@ -34,6 +36,7 @@ coverage_files :=  $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddir)/*
 intervals_files :=  $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddir)/*.intervals)))
 fastqc_files := $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddir)/*fastqc*)))
 original_files_listing := $(archivedir)/original_files_listing.txt
+trimmed_files := $(wildcard $(builddir)/*quadtrim*)
 
 
 
@@ -75,7 +78,10 @@ original_files_listing := $(archivedir)/original_files_listing.txt
 # how to make the listing of original files in the build dir
 ###############################################
 $(archivedir)/original_files_listing.txt:
-	ls -slt $(builddir) > $@
+	date >> $@
+	echo "original files listing" >> $@
+	echo "======================" >> $@
+	ls -slt $(builddir) >> $@
 
 ###############################################
 # how to archive data files 
@@ -101,6 +107,9 @@ $(archivedir)/%:  $(builddir)/%
 ##############################################
 # cleaning - not yet doing this using make  
 ##############################################
+.PHONY : clean
 clean:
-	echo "no clean for now" 
-
+	echo "will remove $(trimmed_files)" 
+	echo "**** press CTRL-C if you don't want to do that ! ****"
+	read
+	rm $(trimmed_files)
