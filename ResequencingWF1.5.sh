@@ -4,6 +4,7 @@
 function get_opts() {
 
 DRY_RUN=no
+DEBUG=no
 p1=""
 p2=""
 prestr=""
@@ -35,10 +36,13 @@ data folder - e.g. when there are a number of different barcoded outputs in a si
 
 "
 
-while getopts ":nhS:B:D:G:X:T:p:q:r:s:t:" opt; do
+while getopts ":ndhS:B:D:G:X:T:p:q:r:s:t:" opt; do
   case $opt in
     n)
       DRY_RUN=yes
+      ;;
+    d)
+      DEBUG=yes
       ;;
     h)
       echo -e $help_text
@@ -114,6 +118,7 @@ function echo_opts() {
   echo BUILD_ROOT=$BUILD_ROOT
   echo LANE_TARGETS=$LANE_TARGETS
   echo DRY_RUN=$DRY_RUN
+  echo DEBUG=$DEBUG
 }
 
 function load_modules() {
@@ -187,16 +192,16 @@ else
 fi
 set +x
 
-if [ $? == 0 ]; then
-   echo "cleaning tardis/quadtrim tempdata"
-   set -x
-   find ${BUILD_DIR} -name "tardis*" -type d -exec rm -rf {} \;
-   set +x
-else
-   echo "(build appears to have failed so skipping the tardis/quadtrim clean)"
+if [ $DEBUG != "yes" ]; then
+   if [ $? == 0 ]; then
+      echo "cleaning tardis/quadtrim tempdata"
+      set -x
+      find ${BUILD_DIR} -name "tardis*" -type d -exec rm -rf {} \;
+      set +x
+   else
+      echo "(build appears to have failed so skipping the tardis/quadtrim clean)"
+   fi
 fi
-
-
 
 # make a precis of the log file
 make -i -f ResequencingWF1.5.mk ${SAMPLE}.logprecis 
