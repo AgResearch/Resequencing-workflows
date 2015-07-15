@@ -11,6 +11,7 @@ prestr=""
 midstr=""
 poststr=""
 R1_FILE_PATTERN="*_L*_R1_*.fastq.gz"
+quadtrim_option_set=sheep_set
 
 help_text="
  examples : \n
@@ -36,7 +37,7 @@ data folder - e.g. when there are a number of different barcoded outputs in a si
 
 "
 
-while getopts ":ndhS:B:D:G:X:T:p:q:r:s:t:" opt; do
+while getopts ":ndhe:S:B:D:G:X:T:p:q:r:s:t:" opt; do
   case $opt in
     n)
       DRY_RUN=yes
@@ -62,6 +63,9 @@ while getopts ":ndhS:B:D:G:X:T:p:q:r:s:t:" opt; do
       ;;
     G)
       REF_GENOME=$OPTARG
+      ;;
+    e)
+      quadtrim_option_set=$OPTARG
       ;;
     X)
       R1_FILE_PATTERN=$OPTARG
@@ -119,6 +123,7 @@ function echo_opts() {
   echo LANE_TARGETS=$LANE_TARGETS
   echo DRY_RUN=$DRY_RUN
   echo DEBUG=$DEBUG
+  echo quadtrim_option_set=$quadtrim_option_set
 }
 
 function load_modules() {
@@ -185,10 +190,10 @@ cd $TEMP_DIR
 if [ $DRY_RUN != "no" ]; then
    echo "***** dry run only *****"
    set -x
-   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j 8 -n BWA_reference=$REF_GENOME dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j 8 -n BWA_reference=$REF_GENOME quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
 else
    set -x
-   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j 8 BWA_reference=$REF_GENOME dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j 8 BWA_reference=$REF_GENOME quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
 fi
 set +x
 

@@ -116,6 +116,9 @@ RUN_SAMBAMBA=/dataset/AG_1000_bulls/active/bin/sambamba
 RUN_SAMTOOLS=samtools
 RUN_JAVA=/usr/bin/java
 RUN_QUADTRIM=/dataset/hiseq/active/bin/quadtrim
+# quadtrim option sets  - we are passed (via the variable quadtrim_option_set) set names like "sheep_set" etc, rather than -d sheep ,
+sheep_set=-d sheep
+cattle_set=-d bulls
 GATK=/dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar
 
 # variables for tardis and other apps
@@ -471,7 +474,7 @@ endif
 ###############################################
 %.fastq.quadtrim:
 	#$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim.gz,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim.gz,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) _condition_output_quaddir _condition_fastq_product_{}/$(subst .fastq.quadtrim.gz,.fastq-pass.fq,$(notdir $@)),$@  _condition_fastq_product_{}/$(subst .fastq.quadtrim.gz,.fastq-pass.fq,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))),$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))   _condition_fastq_product_{}/$(subst .fastq.quadtrim.gz,.fastq-singleton.fq,$(subst $(midstr)$(p1),$(midstr)X,$(notdir $@))),$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@))) \> _condition_text_output_$(subst .fastq.quadtrim.gz,.stdout,$(subst $(midstr)$(p1),,$@))
-	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
 
 ###############################################
 # how to make quadtrim singles intermediate files
