@@ -1,5 +1,6 @@
 #!/bin/sh
-# this version uses makefile 1.5 which uses quadtrim rather than flexbar
+# driver script for an associated makefile, used to move a completed project to
+# an archive filesystem and clean up intermediate files 
 
 function get_opts() {
 
