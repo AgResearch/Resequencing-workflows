@@ -17,25 +17,14 @@ quadtrim_option_set=sheep_set
 
 help_text="
  examples : \n
- ./ResequencingWF1.5.sh  -n -S Sample_932593 -D /dataset/hiseq/active/140516_D00390_0041_BC4KPCACXX/bcl2fastq/Unaligned/Project_SalmonSheepWGS/Sample_932593 -G /dataset/Salmo_salar_2014/active/ICSASG_v1/Ssa_ASM_3.6.fa  -B /dataset/Salmo_salar_2014/scratch  -p 9 -q 1 -r 2 -s _R -t _0\n
- (the sample folders contains paired files like  \n
-  932593_GTCCGC_L003_R1_005.fastq.gz, 932593_GTCCGC_L003_R1_007.fastq.gz, 932593_GTCCGC_L004_R1_002.fastq.gz\n
-  932593_GTCCGC_L003_R2_005.fastq.gz, 932593_GTCCGC_L003_R2_007.fastq.gz, 932593_GTCCGC_L004_R2_002.fastq.gz\n
-  etc \n
-
- ./ResequencingWF1.5.sh  -n -S NZCPWF000001391796 -D /dataset/hiseq/scratch/postprocessing_dev/150508_D00390_0226_AC6H4RANXX.processed/bcl2fastq/Project_WGS_NICHETRAITS/Sample_1016456575  -G /dataset/OARv3.0/active/current_version/sheep.v3.0.14th.final.fa -B /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -T /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -p 1016456575_GTGAAA -q 1 -r 2 -s _R -t _0\n
-
- ./ResequencingWF1.5.sh  -n -S NZCPWF000001391796_test -D /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/testdata -G /dataset/OARv3.0/active/current_version/sheep.v3.0.14th.final.fa -B /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -T /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -p 1016456575_GTGAAA -q 1 -r 2 -s _R -t _0\n
-
- ./ResequencingWF1.5.sh  -n -S NZCPWF000001391796_oldparms -D /dataset/hiseq/scratch/postprocessing_dev/150508_D00390_0226_AC6H4RANXX.processed/bcl2fastq/Project_WGS_NICHETRAITS/Sample_1016456575 -G /dataset/OARv3.0/active/current_version/sheep.v3.0.14th.final.fa -B /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -T /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -p 1016456575_GTGAAA -q 1 -r 2 -s _R -t _0\n
-
- ./ResequencingWF1.5.sh  -n -S NZCPWF000001391796_test -D /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/testdata -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa -B /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -T /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -p 1016456575_GTGAAA -q 1 -r 2 -s _R -t _0\n
-
+\n
  ./ResequencingWF1.5.sh  -S NZCPWF000001391796 -D /dataset/hiseq/scratch/postprocessing_dev/150508_D00390_0226_AC6H4RANXX.processed/bcl2fastq/Project_WGS_NICHETRAITS/Sample_1016456575 -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa -B /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -T /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -p 1016456575_GTGAAA -q 1 -r 2 -s _R -t _0\n
-
-./ResequencingWF1.5.sh -n -S NZCPWF100017865294 -X "*TTAGGC_L*_R1_*.fastq.gz" -D /dataset/BLGsheep/archive/NZGL01418_1/Raw  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p C6KFHANXX-1418-2-05-01_TTAGGC -q 1 -r 2 -s _R -t _0
-(using the -X argument to specify a pattern to match when marshalling files from the 
-data folder - e.g. when there are a number of different barcoded outputs in a single folder)
+\n
+./ResequencingWF1.5.sh -n -S NZCPWF100017865294 -X "*TTAGGC_L*_R1_*.fastq.gz" -D /dataset/BLGsheep/archive/NZGL01418_1/Raw  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p C6KFHANXX-1418-2-05-01_TTAGGC -q 1 -r 2 -s _R -t _0\n
+(using the -X argument to specify a pattern to match when marshalling files from the \n
+data folder - e.g. when there are a number of different barcoded outputs in a single folder) \n
+\n
+for more exampples see ResequencingWF1.5.examples\n
 
 "
 

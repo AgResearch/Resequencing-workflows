@@ -43,7 +43,18 @@ Dry run:  - e.g. this lets you check you are picking up the right files
 
 ./ResequencingWF1.5.sh -n -S NZUKNF100017092143 -X "*TGACCA_L*_R1_*.fastq.gz" -D /dataset/BLGsheep/archive/NZGL01418_2/Raw  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa  -e sheep_set -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p C6 -q 1 -r 2 -s _R -t _0
 
-Live run: as above but remove the -n option 
+Live run: as above but remove the -n option  : 
+
+./ResequencingWF1.5.sh -n -S NZUKNF100017092143 -X "*TGACCA_L*_R1_*.fastq.gz" -D /dataset/BLGsheep/archive/NZGL01418_2/Raw  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa  -e sheep_set -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p C6 -q 1 -r 2 -s _R -t _0
+
+The above launches child processes locally, with a max of 8 procs launched. To use (say) max of 4:
+
+./ResequencingWF1.5.sh -S NZUKNF100017092143 -X "*TGACCA_L*_R1_*.fastq.gz" -J 8 -D /dataset/BLGsheep/archive/NZGL01418_2/Raw  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa  -e sheep_set -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p C6 -q 1 -r 2 -s _R -t _0
+
+To launch child procs using condor rather than locally:
+
+
+./ResequencingWF1.5.sh -S NZUKNF100017092143 -X "*TGACCA_L*_R1_*.fastq.gz" -C condor  -D /dataset/BLGsheep/archive/NZGL01418_2/Raw  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa  -e sheep_set -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p C6 -q 1 -r 2 -s _R -t _0
 
 Example 2 : Files are in different folders - create a link-farm first
 =====================================================================
