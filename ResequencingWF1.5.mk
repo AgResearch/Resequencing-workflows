@@ -37,7 +37,6 @@ prestr=
 midstr=
 poststr=
 mytmp=/tmp
-adaptersFile=/dataset/AG_1000_bulls/active/adapters.txt
 builddir=/not set
 
 #
@@ -110,16 +109,14 @@ builddir=/not set
 # other variables (not project specific)
 # ******************************************************************************************
 RUN_TARDIS=tardis.py
-#RUN_TARDIS=/home/mccullocha/galaxy/hpc/dev/tardis.py
 RUN_FASTQC=fastqc
-RUN_SAMBAMBA=/dataset/AG_1000_bulls/active/bin/sambamba
+RUN_SAMBAMBA=sambamba
 RUN_SAMTOOLS=samtools
-RUN_JAVA=/usr/bin/java
-RUN_QUADTRIM=/dataset/hiseq/active/bin/quadtrim
+RUN_JAVA=java
+RUN_QUADTRIM=quadtrim
 # quadtrim option sets  - we are passed (via the variable quadtrim_option_set) set names like "sheep_set" etc, rather than -d sheep ,
 sheep_set=-d sheep
 cattle_set=-d bulls
-GATK=/dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar
 
 # variables for tardis and other apps
 TARDIS_chunksize=200000
@@ -235,8 +232,7 @@ $(prestr)%$(poststr).testdependency:
 # (not all the tools that were used are installed 
 # as packages currently )
 ###############################################
-.PHONY : versions.log
-versions.log:
+%.versions:
 	echo "Tool versions : " > versions.log
 	echo "Java" >> versions.log
 	echo "----"  >> versions.log
@@ -254,8 +250,8 @@ versions.log:
 	$(RUN_SAMBAMBA) -h >> versions.log  2>&1
 	echo "gatk"  >> versions.log
 	echo "----"  >> versions.log
-	echo $(RUN_JAVA) -Xmx4G -jar -Djava.io.tmpdir=$(mytmp) -jar $(GATK) >> versions.log
-	$(RUN_JAVA) -Xmx4G -jar -Djava.io.tmpdir=$(mytmp) -jar $(GATK) -h | head -5 >> versions.log  2>&1
+	echo $(RUN_JAVA) -Xmx4G -jar -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) >> versions.log
+	$(RUN_JAVA) -Xmx4G -jar -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) -h | head -5 >> versions.log  2>&1
 	echo "bwa"  >> versions.log
 	echo "---"  >> versions.log
 	echo bwa >> versions.log
@@ -294,7 +290,7 @@ versions.log:
 # as well as the coverage.sample_summary file)
 ###############################################
 %.coverage.sample_summary: %.realignedbam
-	$(RUN_JAVA) -Xmx4G -jar -Djava.io.tmpdir=$(mytmp) -jar $(GATK) -T DepthOfCoverage -R $(BWA_reference) -I $*_realigned.bam --omitDepthOutputAtEachBase --logging_level ERROR --summaryCoverageThreshold 10 --summaryCoverageThreshold 20 --summaryCoverageThreshold 30 --summaryCoverageThreshold 40 --summaryCoverageThreshold 50 --summaryCoverageThreshold 80 --summaryCoverageThreshold 90 --summaryCoverageThreshold 100 --summaryCoverageThreshold 150 --minBaseQuality 15 --minMappingQuality 30 --start 1 --stop 1000 --nBins 999 -dt NONE -o $*.coverage
+	$(RUN_JAVA) -Xmx4G -jar -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) -T DepthOfCoverage -R $(BWA_reference) -I $*_realigned.bam --omitDepthOutputAtEachBase --logging_level ERROR --summaryCoverageThreshold 10 --summaryCoverageThreshold 20 --summaryCoverageThreshold 30 --summaryCoverageThreshold 40 --summaryCoverageThreshold 50 --summaryCoverageThreshold 80 --summaryCoverageThreshold 90 --summaryCoverageThreshold 100 --summaryCoverageThreshold 150 --minBaseQuality 15 --minMappingQuality 30 --start 1 --stop 1000 --nBins 999 -dt NONE -o $*.coverage
 
 ###############################################
 # how to make the vcf
@@ -327,11 +323,11 @@ ifndef $(targetIntervalsvarname)
 %.realignedbam: %.samplemergedbam %.intervals
 	# if we have samplemergedbam then we should also have _samplemerged.bam plus index
 	#$(RUN_JAVA) -Xmx10g -Djava.io.tmpdir=$(mytmp) -jar $(GATK) -T IndelRealigner -R $(BWA_reference) -targetIntervals $*.intervals  -I $*_samplemerged.bam  -o $*.realignedbam -S LENIENT
-	$(RUN_JAVA) -Xmx10g -Djava.io.tmpdir=$(mytmp) -jar $(GATK) -T IndelRealigner --read_filter NotPrimaryAlignment -R $(BWA_reference) -targetIntervals $*.intervals  -I $*_samplemerged.bam  -o $*.realignedbam -S LENIENT
+	$(RUN_JAVA) -Xmx10g -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) -T IndelRealigner --read_filter NotPrimaryAlignment -R $(BWA_reference) -targetIntervals $*.intervals  -I $*_samplemerged.bam  -o $*.realignedbam -S LENIENT
 else
 %.realignedbam: %.samplemergedbam 
 	#$(RUN_JAVA) -Xmx10g -Djava.io.tmpdir=$(mytmp) -jar $(GATK) -T IndelRealigner -R $(BWA_reference) -targetIntervals $(targetIntervals) -I $*_samplemerged.bam -o $*.realignedbam -S LENIENT
-	$(RUN_JAVA) -Xmx10g -Djava.io.tmpdir=$(mytmp) -jar $(GATK) -T IndelRealigner --read_filter NotPrimaryAlignment -R $(BWA_reference) -targetIntervals $(targetIntervals) -I $*_samplemerged.bam -o $*.realignedbam -S LENIENT
+	$(RUN_JAVA) -Xmx10g -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) -T IndelRealigner --read_filter NotPrimaryAlignment -R $(BWA_reference) -targetIntervals $(targetIntervals) -I $*_samplemerged.bam -o $*.realignedbam -S LENIENT
 endif
 	# make a shortcut with suffix "bam" - many of the tools do not like custom suffixes like realignedbam etc
 	ln -fs $*.realignedbam $*_realigned.bam 
@@ -342,7 +338,7 @@ endif
 ###############################################
 %.intervals: %.samplemergedbam
 	# if we have samplemergedbam then we should also have _samplemerged.bam plus index
-	$(RUN_JAVA) -Xmx4g -Djava.io.tmpdir=$(mytmp) -jar $(GATK) -T RealignerTargetCreator -nt 16 -R $(BWA_reference) -I $*_samplemerged.bam -o $*.intervals -S LENIENT -rbs 5000000
+	$(RUN_JAVA) -Xmx4g -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) -T RealignerTargetCreator -nt 16 -R $(BWA_reference) -I $*_samplemerged.bam -o $*.intervals -S LENIENT -rbs 5000000
 
 
 #############################################################################

@@ -5,12 +5,14 @@ function get_opts() {
 
 DRY_RUN=no
 DEBUG=no
+R1_FILE_PATTERN="*_L*_R1_*.fastq.gz"
+HPCTYPE=local
+THREADS=8
 p1=""
 p2=""
 prestr=""
 midstr=""
 poststr=""
-R1_FILE_PATTERN="*_L*_R1_*.fastq.gz"
 quadtrim_option_set=sheep_set
 
 help_text="
@@ -37,7 +39,7 @@ data folder - e.g. when there are a number of different barcoded outputs in a si
 
 "
 
-while getopts ":ndhe:S:B:D:G:X:T:p:q:r:s:t:" opt; do
+while getopts ":ndhe:S:B:D:G:X:T:J:C:p:q:r:s:t:" opt; do
   case $opt in
     n)
       DRY_RUN=yes
@@ -51,6 +53,12 @@ while getopts ":ndhe:S:B:D:G:X:T:p:q:r:s:t:" opt; do
       ;;
     T)
       TEMP_ROOT=$OPTARG
+      ;;
+    J)
+      THREADS=$OPTARG
+      ;;
+    C)
+      HPCTYPE=$OPTARG
       ;;
     S)
       SAMPLE=$OPTARG
@@ -114,6 +122,10 @@ function check_opts() {
     echo "must specify sample name using -S option"
     exit 1
   fi
+  if [[ "$HPCTYPE" != "condor" && "$HPCTYPE" != "local" ]]; then
+    echo "hpctype must be condor or local"
+    exit 1
+  fi
 }
 
 function echo_opts() {
@@ -123,11 +135,44 @@ function echo_opts() {
   echo LANE_TARGETS=$LANE_TARGETS
   echo DRY_RUN=$DRY_RUN
   echo DEBUG=$DEBUG
+  echo HPCTYPE=$HPCTYPE
+  echo THREADS=$THREADS
   echo quadtrim_option_set=$quadtrim_option_set
 }
 
-function load_modules() {
-  module load samtools/0.1.19
+#
+# edit this method to set required environment (or set up
+# before running this script)
+#
+function configure_env() {
+  if [ -d /usr/lib64/samtools0119/bin ]; then
+     module load samtools/0.1.19
+  else
+     echo "assuming environment has path to samtools 0.1.19 or equivalent"
+  fi
+
+  if [ -f /dataset/AG_1000_bulls/active/bin/sambamba ]; then
+     PATH=$PATH:/dataset/AG_1000_bulls/active/bin
+  else
+     echo "assuming environment has path to sambamba"
+  fi
+     
+  if [ -f /dataset/hiseq/active/bin/quadtrim ]; then
+     PATH=$PATH:/dataset/hiseq/active/bin
+  else
+     echo "assuming environment has path to quadtrim"
+  fi
+
+  if [ -f /dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar  ]; then
+     GATK_LITE_JAR=/dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar
+     export GATK_LITE_JAR
+  else
+     echo "assuming environment has GATK_LITE_JAR containing path to  GenomeAnalysisTKLite.jar"
+  fi
+
+  echo "configured the following environment variables :"
+  echo "PATH=$PATH"
+  echo "GATK_LITE_JAR=$GATK_LITE_JAR"
 }
 
 
@@ -137,7 +182,7 @@ check_opts
 
 echo_opts
 
-load_modules
+configure_env
 
 ##### from here inline code to run the processing
 TEMP_DIR=$TEMP_ROOT/${SAMPLE}tmp
@@ -150,19 +195,46 @@ if [ ! -d $BUILD_DIR ]; then
    mkdir $BUILD_DIR
 fi
 
-
-
 # copy or init tardis config file 
 if [ -f .tardishrc ]; then
+   echo "found .tardishrc in current directory will use this (copying to $TEMP_DIR)"
    cp  .tardishrc $TEMP_DIR
 else
-echo "
+   if [ $HPCTYPE == "condor" ]; then
+      echo "setting up the following tardis startup file in $TEMP_DIR :"
+      echo "
+[tardish]
+
+[tardis_engine]
+job_template_name=condor_send_env_job
+shell_template_name=condor_shell
+"
+      echo "
 [tardish]
 
 [tardis_engine]
 job_template_name=condor_send_env_job
 shell_template_name=condor_shell
 " > $TEMP_DIR/.tardishrc
+   else
+      echo "setting up the following tardis startup file in $TEMP_DIR :"
+      echo "
+[tardish]
+
+[tardis_engine]
+shell_template_name=local_shell
+max_processes=$THREADS
+hpctype=local
+"
+      echo "
+[tardish]
+
+[tardis_engine]
+shell_template_name=local_shell
+max_processes=$THREADS
+hpctype=local
+" > $TEMP_DIR/.tardishrc
+   fi
 fi
 
 # get the lane monikers string needed by the makefile 
@@ -170,7 +242,6 @@ moniker_string=""
 moniker_list_file=/tmp/${$}moniker_list.tmp
 echo  > $moniker_list_file 
 R1_PATH_PATTERN=$DATA_DIR/$R1_FILE_PATTERN
-#for R1file in $DATA_DIR/*_L*_R1_*.fastq.gz; do 
 for R1file in $R1_PATH_PATTERN; do 
    moniker=`basename $R1file .fastq.gz` 
    echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1_/_/g' - >> $moniker_list_file 
@@ -190,10 +261,10 @@ cd $TEMP_DIR
 if [ $DRY_RUN != "no" ]; then
    echo "***** dry run only *****"
    set -x
-   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j 8 -n BWA_reference=$REF_GENOME quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j $THREADS -n BWA_reference=$REF_GENOME quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
 else
    set -x
-   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j 8 BWA_reference=$REF_GENOME quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.5.mk -d --no-builtin-rules -j $THREADS BWA_reference=$REF_GENOME quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.all > ${SAMPLE}.log 2>&1
 fi
 set +x
 
