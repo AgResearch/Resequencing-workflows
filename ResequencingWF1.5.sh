@@ -257,7 +257,7 @@ else
 fi
 set +x
 
-if [ $DEBUG != "yes" ]; then
+if [[ ( $DEBUG != "yes" )  && ( $DRY_RUN != "yes" )  ]]; then
    if [ $? == 0 ]; then
       echo "cleaning tardis/quadtrim tempdata"
       set -x
