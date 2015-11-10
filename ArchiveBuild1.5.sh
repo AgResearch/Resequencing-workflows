@@ -77,7 +77,14 @@ TEMP_DIR=$TEMP_ROOT/${SAMPLE}tmp
 BUILD_DIR=$BUILD_ROOT/${SAMPLE}
 ARCHIVE_DIR=$ARCHIVE_ROOT/${SAMPLE}
 if [ ! -d $TEMP_DIR ]; then
-   mkdir $TEMP_DIR
+   echo "$TEMP_DIR should already exist and should contain logfiles from the original run"
+   exit 1
+fi
+
+ls $TEMP_DIR/*.log > /dev/null
+if [ $? != 0 ]; then
+   echo "$TEMP_DIR should already exist and should contain logfiles from the original run"
+   exit 1
 fi
 
 if [ ! -d $BUILD_DIR ]; then
