@@ -20,7 +20,7 @@ while getopts ":nhS:B:D:G:T:A:" opt; do
       exit 0
       ;;
     T)
-      TEMP_ROOT=$OPTARG
+      RUNLOG_ROOT=$OPTARG
       ;;
     S)
       SAMPLE=$OPTARG
@@ -49,8 +49,8 @@ function check_opts() {
     echo "BUILD_ROOT $BUILD_ROOT not found "
     exit 1
   fi
-  if [ ! -d "$TEMP_ROOT" ]; then
-    echo "TEMP_ROOT $TEMP_ROOT not found "
+  if [ ! -d "$RUNLOG_ROOT" ]; then
+    echo "RUNLOG_ROOT $RUNLOG_ROOT not found "
     exit 1
   fi
   if [ -z "$SAMPLE" ]; then
@@ -73,17 +73,17 @@ check_opts
 echo_opts
 
 ##### from here inline code to run the processing
-TEMP_DIR=$TEMP_ROOT/${SAMPLE}tmp
+RUNLOG_DIR=$RUNLOG_ROOT/${SAMPLE}tmp
 BUILD_DIR=$BUILD_ROOT/${SAMPLE}
 ARCHIVE_DIR=$ARCHIVE_ROOT/${SAMPLE}
-if [ ! -d $TEMP_DIR ]; then
-   echo "$TEMP_DIR should already exist and should contain logfiles from the original run"
+if [ ! -d $RUNLOG_DIR ]; then
+   echo "$RUNLOG_DIR should already exist and should contain logfiles from the original run"
    exit 1
 fi
 
-ls $TEMP_DIR/*.log > /dev/null
+ls $RUNLOG_DIR/*.log > /dev/null
 if [ $? != 0 ]; then
-   echo "$TEMP_DIR should already exist and should contain logfiles from the original run"
+   echo "$RUNLOG_DIR should already exist and should contain logfiles from the original run"
    exit 1
 fi
 
@@ -95,16 +95,16 @@ if [ ! -d $ARCHIVE_DIR ]; then
    mkdir $ARCHIVE_DIR
 fi
 
-cp ArchiveBuild1.5.mk $TEMP_DIR
-cd $TEMP_DIR
-echo "(logging run to $TEMP_DIR/${SAMPLE}.archivelog)" 
+cp ArchiveBuild1.5.mk $RUNLOG_DIR
+cd $RUNLOG_DIR
+echo "(logging run to $RUNLOG_DIR/${SAMPLE}.archivelog)" 
 if [ $DRY_RUN != "no" ]; then
    echo "***** dry run only *****"
    set -x
-   make -f ArchiveBuild1.5.mk -d --no-builtin-rules -j 8 -n builddir=$BUILD_DIR archivedir=${ARCHIVE_DIR} tempdir=$TEMP_DIR ${ARCHIVE_DIR}/${SAMPLE}.all > ${SAMPLE}.archivelog 2>&1
+   make -f ArchiveBuild1.5.mk -d --no-builtin-rules -j 8 -n builddir=$BUILD_DIR archivedir=${ARCHIVE_DIR} runlogdir=$RUNLOG_DIR ${ARCHIVE_DIR}/${SAMPLE}.all > ${SAMPLE}.archivelog 2>&1
 else
    set -x
-   make -f ArchiveBuild1.5.mk -d --no-builtin-rules -j 8 builddir=$BUILD_DIR archivedir=${ARCHIVE_DIR} tempdir=$TEMP_DIR ${ARCHIVE_DIR}/${SAMPLE}.all > ${SAMPLE}.archivelog 2>&1
+   make -f ArchiveBuild1.5.mk -d --no-builtin-rules -j 8 builddir=$BUILD_DIR archivedir=${ARCHIVE_DIR} runlogdir=$RUNLOG_DIR ${ARCHIVE_DIR}/${SAMPLE}.all > ${SAMPLE}.archivelog 2>&1
 fi
 set +x
 

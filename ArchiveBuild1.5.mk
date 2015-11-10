@@ -14,7 +14,7 @@
 #*****************************************************************************************
 # examples  
 #*****************************************************************************************
-# make -f ArchiveBuild1.5.mk -d --no-builtin-rules -j 8 builddir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796 archivedir=/dataset/AG_1000_sheep/archive/2015_processing_results/NZCPWF000001391796 tempdir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796tmp /dataset/AG_1000_sheep/archive/2015_processing_results/NZCPWF000001391796/NZCPWF000001391796.all
+# make -f ArchiveBuild1.5.mk -d --no-builtin-rules -j 8 builddir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796 archivedir=/dataset/AG_1000_sheep/archive/2015_processing_results/NZCPWF000001391796 runlogdir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796tmp /dataset/AG_1000_sheep/archive/2015_processing_results/NZCPWF000001391796/NZCPWF000001391796.all
 # make -f ArchiveBuild1.5.mk builddir=/dataset/AG_1000_sheep/scratch/PHUAS_processing_052015/NZCPWF000001391796 clean
 #
 # (this makefile is usually run by the associated shell script however)
@@ -25,7 +25,7 @@
 # ******************************************************************************************
 builddir=/not set
 archivedir=/not set
-tempdir=/not set
+runlogdir=/not set
 
 
 # ******************************************************************************************
@@ -96,8 +96,8 @@ $(archivedir)/%:  $(builddir)/%
 ###############################################
 .PHONY : %.logging
 %.logging:
-	cp -p $(tempdir)/*.log $(archivedir)
-	cp -p $(tempdir)/*.mk $(archivedir)
+	cp -p $(runlogdir)/*.log $(archivedir)
+	cp -p $(runlogdir)/*.mk $(archivedir)
 
 ##############################################
 # specify the "intermediate" files to keep - i.e. actually these are the archived files
