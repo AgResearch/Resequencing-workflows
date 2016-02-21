@@ -276,3 +276,8 @@ make -i -f ResequencingWF1.5.mk ${SAMPLE}.versions
 
 cat ${SAMPLE}.logprecis
 
+# suggest an archiving step.
+echo "suggest you check the run then archive it. Example command to archive : 
+./ArchiveBuild1.5.sh   -S $SAMPLE -A /dataset/AG_1000_sheep/archive/2015_processing_results -B /dataset/AG_1000_sheep/scratch/general_processing_062015  -T /dataset/AG_1000_sheep/scratch/general_processing_062015
+"
+
