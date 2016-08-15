@@ -134,25 +134,6 @@ BWA_reference=not set
 ###############################################
 # top level phony test targets  (used for various testing / debugging)
 ###############################################
-#.PHONY : $(prestr)%$(poststr).test
-#$(prestr)%$(poststr).test: $(prestr)%$(poststr).vcf $(prestr)%$(poststr).bamstats $(prestr)%$(poststr).coverage.sample_summary
-#	echo "making test target"
-.PHONY : %.test
-%.test:  $(lanemergedBAMIncludeList)
-	echo "making test target..."
-	echo $(lanemergedBAMIncludeList) 
-
-.PHONY : %.testdependency 
-$(prestr)%$(poststr).testdependency:
-	echo making $*  
-	# make the complete read group
-        # for example the complete readgroup is '@RG\tID:C3PACACXX-1143-01-5-1_GCCAAT_L001\tSM:JJLNZLM000000000394\tPL:illumina\tLB:JJLNZLM000000000394\tPU:C3PACACXX-1143-01-5-1_GCCAAT_L001\tCN:AgResearch'
-        # we are given part of this as the variable rgprefix :
-        # '@RG\tSM:JJLNZLM000000000394\tPL:illumina\tLB:JJLNZLM000000000394\tCN:AgResearch' 
-        # and we will append \tID:C3PACACXX-1143-01-5-1_GCCAAT_L001\tPU:C3PACACXX-1143-01-5-1_GCCAAT_L001'
-        # 
-	echo will use readgroup info
-	echo '$(rgprefix)\tID:$(prestr)$(*F)$(poststr)\tPU:$(prestr)$(*F)$(poststr)'
 
 ###############################################
 # top level target "logprecis" . This extracts from the log file the 
@@ -370,10 +351,15 @@ endif
 # only mentioned the R1 bam in the dependency list because the same process generates both the R1 and R2 
 # intermediate files.
 #############################################################################
+ifeq ($(strip $(poststr)),)
+.SECONDEXPANSION:
+%.lanemergedbam: %.sortedbam %_RX.singlessortedbam  
+	$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $? 
+else
 .SECONDEXPANSION:
 %.lanemergedbam: %.sortedbam $(builddir)/$$(basename $$(subst $(poststr),$(midstr)X$(poststr),$$*)).singlessortedbam  
-	#$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $< $(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(*))).singlessortedbam $(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(*))).singlessortedbam 
 	$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $< $(builddir)/$(basename $(subst $(poststr),$(midstr)X$(poststr),$(notdir $*))).singlessortedbam
+endif
 	# if removeLaneDuplicates = n , make the target (and the associated links with .bam suffix) simply by linking to the above.
 	# (GATK only likes .bam or .sam suffices)
 ifeq ($(subst N,n,$(strip $(removeLaneDuplicates))),n)
@@ -382,7 +368,6 @@ ifeq ($(subst N,n,$(strip $(removeLaneDuplicates))),n)
 else
 	# or, if required to removeLaneDuplicates - process the with-duplicates merged file to remove duplicates, and link to that
 	# problem - sambamba fails for very fragmented references ("More than 16383 reference sequences are unsupported")
-	#$(RUN_SAMTOOLS) rmdup $(basename $@).lanemergedbam_with_duplicates $(basename $@).lanemergedbam_no_duplicates 
 	$(RUN_SAMTOOLS) rmdup $(basename $@).lanemergedbam_with_duplicates $(basename $@).lanemergedbam_no_duplicates 
 	ln -fs $(basename $@).lanemergedbam_no_duplicates $@ 
 	ln -fs $(basename $@).lanemergedbam_no_duplicates $(basename $@)_merged.bam
@@ -469,8 +454,11 @@ endif
 # Note that we only mention 1 of the pairs in the rule - but process both
 ###############################################
 %.fastq.quadtrim:
-	#$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim.gz,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim.gz,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) _condition_output_quaddir _condition_fastq_product_{}/$(subst .fastq.quadtrim.gz,.fastq-pass.fq,$(notdir $@)),$@  _condition_fastq_product_{}/$(subst .fastq.quadtrim.gz,.fastq-pass.fq,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))),$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))   _condition_fastq_product_{}/$(subst .fastq.quadtrim.gz,.fastq-singleton.fq,$(subst $(midstr)$(p1),$(midstr)X,$(notdir $@))),$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@))) \> _condition_text_output_$(subst .fastq.quadtrim.gz,.stdout,$(subst $(midstr)$(p1),,$@))
+ifeq ($(strip $(poststr)),)
+	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+else
 	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+endif
 
 ###############################################
 # how to make quadtrim singles intermediate files

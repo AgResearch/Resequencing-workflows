@@ -5,7 +5,7 @@ function get_opts() {
 
 DRY_RUN=no
 DEBUG=no
-R1_FILE_PATTERN="*_L*_R1_*.fastq.gz"
+R1_FILE_PATTERN="*_L*_R1*.fastq.gz"
 HPCTYPE=local
 THREADS=8
 p1=""
@@ -233,7 +233,11 @@ echo  > $moniker_list_file
 R1_PATH_PATTERN=$DATA_DIR/$R1_FILE_PATTERN
 for R1file in $R1_PATH_PATTERN; do 
    moniker=`basename $R1file .fastq.gz` 
-   echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1_/_/g' - >> $moniker_list_file 
+   if [ -z $poststr ]; then
+      echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1//g' - >> $moniker_list_file
+   else
+      echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1_/_/g' - >> $moniker_list_file 
+   fi
 done
 
 for moniker in `sort -u $moniker_list_file`; do
