@@ -78,6 +78,14 @@ builddir=/not set
 # have a different barcode or date string. (The stem that is matched is only used 
 # internally - so it doesn't matter particularly what is matched)
 #
+#
+# Another example: - file names like C7N0GANXX-1804-04-7-1_L004_R2.fastq.gz, here 
+# leave the poststr variable unset, so you would invoke the makefile wrapper script as  e.g.  
+# ./ResequencingWF1.5.sh -n -S ${SAMPLE} -C condor -D /bifo/archive/fungal_data/nzgl/Raw -G /genomes/saro1.fasta  -e fungal_set -B /dataset/public_invermay_scratch/scratch/fungal_data/bwa -T /dataset/public_invermay_scratch/scratch/fungal_data/bwa -p C7N0GANXX -q 1 -r 2 -s _R  
+# which would invoke this makefile as e.g. 
+# make -f ResequencingWF1.5.mk -d --no-builtin-rules -j 8 -n BWA_reference=/genomes/saro1.fasta quadtrim_option_set=fungal_set dd=/bifo/archive/fungal_data/nzgl/Raw p1=1 p2=2 prestr=C7N0GANXX midstr=_R poststr= 'rgprefix=@RG\\tSM:sample1\\tPL:illumina\\tLB:sample1\\tCN:AgResearch' mytmp=/dataset/public_invermay_scratch/scratch/fungal_data/bwa/sample1tmp builddir=/dataset/public_invermay_scratch/scratch/fungal_data/bwa/sample1 removeSubjectDuplicates=y removeLaneDuplicates=n 'lanemergedBAMIncludeList= /dataset/public_invermay_scratch/scratch/fungal_data/bwa/sample1/C7N0GANXX-1804-01-4-1_L004.lanemergedbam [........ etc for other files in the data folder.......]' /dataset/public_invermay_scratch/scratch/fungal_data/bwa/sample1/sample1.all
+#
+# 
 # Sometimes samples are spread across completely different runs or lanes and a "link farm" approach
 # is needed to created a set of input files that can be matched. For example 
 # consider that we want to pull files from ....
@@ -100,7 +108,7 @@ builddir=/not set
 #   base=`basename $file`
 #   ln -s $file /dataset/AG_1000_sheep/scratch/general_processing_062015/linkfarms/NZUKNM100017918713/prefix$base
 #done
-#
+# 
 #
 #./ResequencingWF1.5.sh -S NZUKNM100017918713 -D /dataset/AG_1000_sheep/scratch/general_processing_062015/linkfarms/NZUKNM100017918713  -G /dataset/datacache/scratch/ensembl/oar3.1/indexes/Ovis_aries.Oar_v3.1.dna_sm.toplevel.fa -B /dataset/AG_1000_sheep/scratch/general_processing_062015 -T /dataset/AG_1000_sheep/scratch/general_processing_062015 -p prefix -q 1 -r 2 -s _R -t _0
 # 
