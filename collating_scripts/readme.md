@@ -1,5 +1,5 @@
 This folder contains  scripting to process "raw"  BAM files from N animals 
-to yield a single VCF file per chromosome that asays variants at each 
+to yield a single VCF file per chromosome that assays variants at each 
 position based on evidence from all the BAMS.
 
 1. gatk_run.sh sets up a link-farm with links to all of the BAM files to 
