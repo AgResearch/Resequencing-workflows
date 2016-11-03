@@ -38,6 +38,7 @@ midstr=
 poststr=
 mytmp=/tmp
 builddir=/not set
+input_method=/not set
 
 #
 #*******************************************************************************************
@@ -122,6 +123,7 @@ RUN_SAMBAMBA=sambamba
 RUN_SAMTOOLS=samtools
 RUN_JAVA=java
 RUN_QUADTRIM=quadtrim
+GET_FASTQ=./get_fastq.sh
 # quadtrim option sets  - we are passed (via the variable quadtrim_option_set) set names like "sheep_set" etc, rather than -d sheep ,
 sheep_set=-d sheep
 cattle_set=-d bulls
@@ -149,7 +151,11 @@ BWA_reference=not set
 # - run this after the actual build has been completed
 ###############################################
 %.logprecis: %.log
-	echo "fastqc" > $*.logprecis
+	echo "get_fastq" > $*.logprecis
+	echo "---------" >> $*.logprecis
+	egrep "^$(GET_FASTQ)" $*.log >> $*.logprecis
+
+	echo "fastqc" >> $*.logprecis
 	echo "------" >> $*.logprecis
 	egrep "^$(RUN_FASTQC)" $*.log >> $*.logprecis
 
@@ -463,9 +469,11 @@ endif
 ###############################################
 %.fastq.quadtrim:
 ifeq ($(strip $(poststr)),)
-	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	#$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$@)) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
 else
-	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	#$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$@)) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
 endif
 
 ###############################################
@@ -485,8 +493,17 @@ endif
 ###############################################
 # how to make fastqc files
 ###############################################
-%_fastqc.zip:
-	$(RUN_FASTQC) $(dd)/$(subst _fastqc.zip,.fastq.gz,$(notdir $@)) -o $(builddir) ; $(RUN_FASTQC) $(dd)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(subst _fastqc.zip,.fastq.gz,$(notdir $@))) -o $(builddir) 
+%_fastqc.zip: %.fastq.gz
+	#$(RUN_FASTQC) $(dd)/$(subst _fastqc.zip,.fastq.gz,$(notdir $@)) -o $(builddir) ; $(RUN_FASTQC) $(dd)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(subst _fastqc.zip,.fastq.gz,$(notdir $@))) -o $(builddir) 
+	$(RUN_FASTQC) $(subst _fastqc.zip,.fastq.gz,$@) -o $(builddir) ; $(RUN_FASTQC) $(subst $(midstr)$(p1),$(midstr)$(p2),$(subst _fastqc.zip,.fastq.gz,$@)) -o $(builddir) 
+
+###############################################
+# how to make fastq files if we don't have them
+###############################################
+%.fastq.gz:
+	$(GET_FASTQ) $(input_method) $(dd)/$(notdir $@)  $@ 
+	$(GET_FASTQ) $(input_method) $(dd)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@)) $(subst $(midstr)$(p1),$(midstr)$(p2),$@)  
+
 
 ##############################################
 # specify the intermediate files to keep 
