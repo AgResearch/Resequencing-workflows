@@ -119,6 +119,13 @@ function check_opts() {
     echo "hpctype must be condor or local"
     exit 1
   fi
+  if [ $INPUT_METHOD == "sra" ]; then
+     if [ $R1_FILE_PATTERN == "*_L*_R1*.fastq.gz" ]; then
+        R1_FILE_PATTERN="*.sra/*.sra"
+     fi
+  fi
+
+
 }
 
 function echo_opts() {
@@ -131,6 +138,7 @@ function echo_opts() {
   echo HPCTYPE=$HPCTYPE
   echo THREADS=$THREADS
   echo quadtrim_option_set=$quadtrim_option_set
+  echo INPUT_METHOD=$INPUT_METHOD
 }
 
 #
@@ -166,6 +174,67 @@ function configure_env() {
   echo "configured the following environment variables :"
   echo "PATH=$PATH"
   echo "GATK_LITE_JAR=$GATK_LITE_JAR"
+
+  TEMP_DIR=$TEMP_ROOT/${SAMPLE}tmp
+  BUILD_DIR=$BUILD_ROOT/${SAMPLE}
+  if [ ! -d $TEMP_DIR ]; then
+     mkdir $TEMP_DIR
+  fi
+
+  if [ ! -d $BUILD_DIR ]; then
+     mkdir $BUILD_DIR
+  fi
+
+}
+
+
+function get_lane_targets() {
+   if [ $INPUT_METHOD == "link_files" ]; then 
+      # get the lane monikers string needed by the makefile. Basically this looks at all the input files 
+      # in the data folder, and works out what targets they imply. (The make process will then work
+      # backwards from those targets to in the input files in the data folder !  ) 
+      set -x
+      moniker_string=""
+      moniker_list_file=/tmp/${$}moniker_list.tmp
+      echo  > $moniker_list_file 
+      R1_PATH_PATTERN=$DATA_DIR/$R1_FILE_PATTERN
+      for R1file in $R1_PATH_PATTERN; do 
+         moniker=`basename $R1file .fastq.gz` 
+         if [ -z $poststr ]; then
+            echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1//g' - >> $moniker_list_file
+         else
+            echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1_/_/g' - >> $moniker_list_file 
+         fi
+      done
+
+      for moniker in `sort -u $moniker_list_file`; do
+         moniker_string="$moniker_string $moniker"
+      done
+      set +x
+   elif [ $INPUT_METHOD == "sra" ]; then
+      # the input sra file(s) is/are under the data folder - each sra file contains a run of the 
+      # sample , there may be one or many. For example ERS1171396 may contain one or more folders such as SRR4291010 each of these
+      # will contain a file like SRR4291010 from which we can extract SRR4291010_1.fastq.gz  SRR4291010_2.fastq.gz
+      # Hence - enurate all *.fastq.* which need to be extracted from a sample, and pack these into 
+      # the moiker_string which becomes part of the lane target
+      # 
+      set -x
+      moniker_string=""
+      moniker_list_file=/tmp/${$}moniker_list.tmp
+      R1_PATH_PATTERN=$DATA_DIR/$R1_FILE_PATTERN
+      for R1file in $R1_PATH_PATTERN; do 
+         moniker=`basename $R1file .sra` 
+         echo ${BUILD_DIR}/${moniker}.lanemergedbam >> $moniker_list_file
+      done
+
+      for moniker in `sort -u $moniker_list_file`; do
+         moniker_string="$moniker_string $moniker"
+      done
+      set +x
+   else
+      echo "unknown input method $INPUT_METHOD"
+      exit 1
+   fi
 }
 
 
@@ -177,16 +246,10 @@ echo_opts
 
 configure_env
 
-##### from here inline code to run the processing
-TEMP_DIR=$TEMP_ROOT/${SAMPLE}tmp
-BUILD_DIR=$BUILD_ROOT/${SAMPLE}
-if [ ! -d $TEMP_DIR ]; then
-   mkdir $TEMP_DIR
-fi
+get_lane_targets
 
-if [ ! -d $BUILD_DIR ]; then
-   mkdir $BUILD_DIR
-fi
+##### from here inline code to run the processing
+
 
 # copy or init tardis config file 
 if [ -f .tardishrc ]; then
@@ -229,24 +292,6 @@ hpctype=local
 " > $TEMP_DIR/.tardishrc
    fi
 fi
-
-# get the lane monikers string needed by the makefile 
-moniker_string=""
-moniker_list_file=/tmp/${$}moniker_list.tmp
-echo  > $moniker_list_file 
-R1_PATH_PATTERN=$DATA_DIR/$R1_FILE_PATTERN
-for R1file in $R1_PATH_PATTERN; do 
-   moniker=`basename $R1file .fastq.gz` 
-   if [ -z $poststr ]; then
-      echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1//g' - >> $moniker_list_file
-   else
-      echo ${BUILD_DIR}/${moniker}.lanemergedbam | sed 's/_R1_/_/g' - >> $moniker_list_file 
-   fi
-done
-
-for moniker in `sort -u $moniker_list_file`; do
-   moniker_string="$moniker_string $moniker"
-done
 
 
 # get the Readgroup prefix to be passed in 

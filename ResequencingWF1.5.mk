@@ -501,8 +501,14 @@ endif
 # how to make fastq files if we don't have them
 ###############################################
 %.fastq.gz:
-	$(GET_FASTQ) $(input_method) $(dd)/$(notdir $@)  $@ 
-	$(GET_FASTQ) $(input_method) $(dd)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@)) $(subst $(midstr)$(p1),$(midstr)$(p2),$@)  
+ifeq ($(input_method),sra)
+	# (this will extract fastq from sra archive)
+	$(GET_FASTQ) $(input_method) $(dd)/$(notdir $@) $@
+else 
+	# (this will just make links to the existing files)
+	$(GET_FASTQ) $(input_method) $(dd)/$(notdir $@) $@ 
+	$(GET_FASTQ) $(input_method) $(dd)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@)) $(subst $(midstr)$(p1),$(midstr)$(p2),$@) 
+endif
 
 
 ##############################################
