@@ -38,7 +38,7 @@ midstr=
 poststr=
 mytmp=/tmp
 builddir=/not set
-input_method=/not set
+tardis_chunksize=2000000
 
 #
 #*******************************************************************************************
@@ -129,10 +129,7 @@ sheep_set=-d sheep
 cattle_set=-d bulls
 
 # variables for tardis and other apps
-TARDIS_chunksize=200000
-# for testing small files
-#TARDIS_chunksize=1000
-TARDIS_workdir=$(builddir)
+tardis_workdir=$(builddir)
 BWA_reference=not set
 
 
@@ -359,20 +356,19 @@ endif
 
 #############################################################################
 # how to make the lane-merged BAM (optionally including removal of duplicates at this level)
-# - see below for notes on the way we need to expand the dependency list at this point to generate the 
-# paired-file related names - i.e. the singles bams - from the sample moniker that is matched in the 
-# target. Note that although the lanemerged bam depends on both the R1 and R2  singles bam, we
-# only mentioned the R1 bam in the dependency list because the same process generates both the R1 and R2 
-# intermediate files.
 #############################################################################
 ifeq ($(strip $(poststr)),)
 .SECONDEXPANSION:
-%.lanemergedbam: %.sortedbam %_RX.singlessortedbam  
-	$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $? 
+%.lanemergedbam: %.sortedbam
+	#%.lanemergedbam: %.sortedbam %_RX.singlessortedbam  
+	#$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $? 
+	$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam 
 else
 .SECONDEXPANSION:
-%.lanemergedbam: %.sortedbam $(builddir)/$$(basename $$(subst $(poststr),$(midstr)X$(poststr),$$*)).singlessortedbam  
-	$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $< $(builddir)/$(basename $(subst $(poststr),$(midstr)X$(poststr),$(notdir $*))).singlessortedbam
+%.lanemergedbam: %.sortedbam    
+	#%.lanemergedbam: %.sortedbam $(builddir)/$$(basename $$(subst $(poststr),$(midstr)X$(poststr),$$*)).singlessortedbam  
+	#$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $< $(builddir)/$(basename $(subst $(poststr),$(midstr)X$(poststr),$(notdir $*))).singlessortedbam
+	$(RUN_SAMBAMBA) merge -t 8  $(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam
 endif
 	# if removeLaneDuplicates = n , make the target (and the associated links with .bam suffix) simply by linking to the above.
 	# (GATK only likes .bam or .sam suffices)
@@ -394,20 +390,27 @@ endif
 ###############################################
 %.sortedbam: %.filteredbam
 	$(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G $<  -o $@
-%.singlessortedbam: %.singlesfilteredbam
-	$(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G $<  -o $@
+	$(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G $*.singlesfilteredbam -o $*.singlessortedbam
+
+
+# this rule deprecated now handled as side-effect above
+#%.singlessortedbam: %.singlesfilteredbam
+#	$(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G $<  -o $@
 
 ###############################################
-# how to make the filtered  BAMs. We insert a dependency on bamstats 
-# at this point to get those done as well 
+# how to make the filtered  BAMs. 
 ###############################################
 %.filteredbam: %.bam 
-	# do this is we want to filter - but no longer filtering here so just pass the unfiltered through 
+	# do e.g. this if we want to filter - but no longer filtering here so just pass the unfiltered through 
 	#$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $< -o $@ 
 	ln -s $< $@ 
-%.singlesfilteredbam: %.singlesbam
-	#$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $< -o $@ 
-	ln -s $< $@ 
+	ln -s $*.singlesbam $*.singlesfilteredbam
+	
+
+# this rule deprecated now handled as side effect above
+#%.singlesfilteredbam: %.singlesbam
+#	#$(RUN_SAMBAMBA) view -t8 -f bam -F "mapping_quality >=20" $< -o $@ 
+#	ln -s $< $@ 
 
 
 ###############################################
@@ -415,21 +418,25 @@ endif
 ###############################################
 %.bamstats: %.bam 
 	bamtools stats -in $<  > $@
-%.singlesbamstats: %.singlesbam 
-	#bamtools stats -in $(builddir)/$<  > $(builddir)/$@
-	bamtools stats -in $<  > $@
+	bamtools stats -in $*.singlesbam  > $*.singlesbamstats
+	
+# this rule deprecated now handled as side-effect above
+#%.singlesbamstats: %.singlesbam 
+#	#bamtools stats -in $(builddir)/$<  > $(builddir)/$@
+#	bamtools stats -in $<  > $@
 
 
-# singlesbam depend on bam in the sense that once the quadtrim prerequisite of 
+# Deprecated , singles now handled as side effect  
+#singlesbam depend on bam in the sense that once the quadtrim prerequisite of 
 # bam has been run, we can then do singlesbam , because the quadtrim step also 
 # delivers the pre-requisite of singlesbam
 # Note we use tardis to ensure taht we wait for the output  (** need to check this)
-%.singlesbam:  %.singlefastq.quadtrim
-ifndef $(rgvarname) 
-	$(RUN_TARDIS) -w -d $(TARDIS_workdir) bwa mem -t 4 -M $(BWA_reference) $(basename $@).singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@ 
-else
-	$(RUN_TARDIS) -w -d $(TARDIS_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\' $(BWA_reference) $(basename $@).singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@ 
-endif
+#%.singlesbam:  %.singlefastq.quadtrim
+#ifndef $(rgvarname) 
+#	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M $(BWA_reference) $(basename $@).singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@ 
+#else
+#	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\' $(BWA_reference) $(basename $@).singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@ 
+#endif
 
 
 ###############################################
@@ -455,47 +462,58 @@ endif
 # Currrent work-around is to add back in the build dir in the rule for these dependencies - i.e. 
 # $(builddir)
 .SECONDEXPANSION:
-%.bam: $(builddir)/$$(basename $$(subst $(poststr),$(midstr)$(p1)$(poststr),$$*))_fastqc.zip $(builddir)/$$(basename $$(subst $(poststr),$(midstr)$(p1)$(poststr),$$*)).fastq.quadtrim
+%.bam:  $(builddir)/$$(basename $$(subst $(poststr),$(midstr)$(p1)$(poststr),$$*)).fastq.quadtrim
 ifndef $(rgvarname) 
-	$(RUN_TARDIS) -w -d $(TARDIS_workdir) bwa mem -t 4 -M $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
+	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
 else
-	$(RUN_TARDIS) -w -d $(TARDIS_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\'  $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
+	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\'  $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
 endif
+# also handle singletons in this rule 
+ifndef $(rgvarname) 
+	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M $(BWA_reference) $*$(midstr)X.singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$*.singlesbam 
+else
+	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\' $(BWA_reference) $*$(midstr)X.singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$*.singlesbam 
+endif
+
+
+
+
+
+###############################################
+# Deprecated how to make quadtrim singles intermediate files
+# (now handled as side-effect for simplicity)
+###############################################
+#%.singlefastq.quadtrim: %.fastq.quadtrim
+#	echo $@ done as side effect of  $<
 
 
 ###############################################
 # how to make quadtrim intermediate files  
 # Note that we only mention 1 of the pairs in the rule - but process both
+# Other output that is made as a side-effect of this rule : 
+# %_fastqc.zip 			(for simplicity ) 
+# %.singlefastq.quadtrim  	(side effect of quadtrim)
 ###############################################
-%.fastq.quadtrim:
+%.fastq.quadtrim: %.fastq.gz
 ifeq ($(strip $(poststr)),)
-	#$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
-	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$@)) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	#$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	#$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$@)) '_condition_uncompressedfastq_product_\S*?_R1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	#$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$@)) '_condition_uncompressedfastq_product_\S*?$(midstr)1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?$(midstr)2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?$(midstr)X\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(*D)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?$(midstr)1\.\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?$(midstr)2\.\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?$(midstr)X\.\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(*D)/$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$(notdir $@)))
 else
-	#$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
-	$(RUN_TARDIS) -w -c $(TARDIS_chunksize) -d $(TARDIS_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$@)) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	#$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(notdir $@)) _condition_paired_fastq_input_$(dd)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	#$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$@)) '_condition_uncompressedfastq_product_\S*?_R1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?_R2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?_RX_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$@))
+	$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) -batonfile $*.baton $(RUN_QUADTRIM) $($(quadtrim_option_set)) _condition_paired_fastq_input_$(subst fastq.quadtrim,fastq.gz,$@) _condition_paired_fastq_input_$(*D)/$(subst fastq.quadtrim,fastq.gz,$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))) '_condition_uncompressedfastq_product_\S*?$(midstr)1_\S*?\d{5}-pass.fq,$@'  '_condition_uncompressedfastq_product_\S*?$(midstr)2_\S*?\d{5}-pass.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $@))' '_condition_uncompressedfastq_product_\S*?$(midstr)X_\S*?\d{5}-singleton.fq,$(*D)/$(subst $(midstr)$(p1),$(midstr)X,$(subst fastq,singlefastq,$(notdir $@)))' \> _condition_text_output_$(*D)/$(subst .fastq.quadtrim,.stdout,$(subst $(midstr)$(p1),,$(notdir $@)))
 endif
+	$(RUN_FASTQC) $< -o $(builddir) ; $(RUN_FASTQC) $(*D)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(notdir $<)) -o $(builddir) 		
+
 
 ###############################################
-# how to make quadtrim singles intermediate files
-# - we wait for these to be made by the quadtrim process
-# The quadtrim process will write out a "batonfile" when its done
-# (i.e. as in pass the baton)
+# Deprectaed seperate rule - how to make fastqc files
 ###############################################
-%.singlefastq.quadtrim:
-	echo "debug1 " $*.baton
-	echo "debug2 " $(midstr)X
-	echo "debug3 " $(midstr)$(p1)
-	echo "debug4 " $(notdir $*.baton)
-	echo "debug5 " $(subst $(midstr)X,$(midstr)$(p1),$(notdir $*.baton))
-	while [ ! -f $(*D)/$(subst $(midstr)X,$(midstr)$(p1),$(notdir $*.baton)) ]; do  sleep 1; done 
-
-###############################################
-# how to make fastqc files
-###############################################
-%_fastqc.zip: %.fastq.gz
-	#$(RUN_FASTQC) $(dd)/$(subst _fastqc.zip,.fastq.gz,$(notdir $@)) -o $(builddir) ; $(RUN_FASTQC) $(dd)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(subst _fastqc.zip,.fastq.gz,$(notdir $@))) -o $(builddir) 
-	$(RUN_FASTQC) $(subst _fastqc.zip,.fastq.gz,$@) -o $(builddir) ; $(RUN_FASTQC) $(subst $(midstr)$(p1),$(midstr)$(p2),$(subst _fastqc.zip,.fastq.gz,$@)) -o $(builddir) 
+#%_fastqc.zip: %.fastq.gz
+#	#$(RUN_FASTQC) $(dd)/$(subst _fastqc.zip,.fastq.gz,$(notdir $@)) -o $(builddir) ; $(RUN_FASTQC) $(dd)/$(subst $(midstr)$(p1),$(midstr)$(p2),$(subst _fastqc.zip,.fastq.gz,$(notdir $@))) -o $(builddir) 
+#	$(RUN_FASTQC) $(subst _fastqc.zip,.fastq.gz,$@) -o $(builddir) ; $(RUN_FASTQC) $(subst $(midstr)$(p1),$(midstr)$(p2),$(subst _fastqc.zip,.fastq.gz,$@)) -o $(builddir) 
 
 ###############################################
 # how to make fastq files if we don't have them
@@ -514,7 +532,7 @@ endif
 ##############################################
 # specify the intermediate files to keep 
 ##############################################
-.PRECIOUS: %.coverage.sample_summary %.intervals %.samplemergedbam %.vcf %.realignedbam %.intervals %.lanemergedbam %.bam %.singlesbam %.sortedbam %.singlessortedbam %.filteredbam %.singlesfilteredbam %.bamstats %.singlesbamstats %_fastqc.zip %.fastq.quadtrim %.singlefastq.quadtrim 
+.PRECIOUS: %.coverage.sample_summary %.intervals %.samplemergedbam %.vcf %.realignedbam %.intervals %.lanemergedbam %.bam %.singlesbam %.sortedbam %.singlessortedbam %.filteredbam %.singlesfilteredbam %.bamstats %.singlesbamstats %_fastqc.zip %.fastq.quadtrim %.singlefastq.quadtrim %.fastq.gz
 
 ##############################################
 # cleaning - not yet doing this using make  
