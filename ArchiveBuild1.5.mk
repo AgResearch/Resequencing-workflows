@@ -37,6 +37,7 @@ realigned_bam_files := $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddi
 coverage_files :=  $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddir)/*.coverage.*)))
 intervals_files :=  $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddir)/*.intervals)))
 fastqc_files := $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddir)/*fastqc*)))
+quadtrim_stats_files := $(addprefix $(archivedir)/, $(notdir $(wildcard $(builddir)/*.quadtrim.*)))
 original_files_listing := $(archivedir)/original_files_listing.txt
 trimmed_files := $(wildcard $(builddir)/*quadtrim*)
 
@@ -73,7 +74,7 @@ trimmed_files := $(wildcard $(builddir)/*quadtrim*)
 # top level phony target "all"  - this is the one thats usually used 
 ###############################################
 .PHONY : %.all 
-%.all: $(original_files_listing) $(vcf_files) $(samplemerged_bam_files) $(realigned_bam_files) $(coverage_files) $(intervals_files) $(fastqc_files) %.logging
+%.all: $(original_files_listing) $(vcf_files) $(samplemerged_bam_files) $(realigned_bam_files) $(coverage_files) $(intervals_files) $(fastqc_files) %.logging $(quadtrim_stats_files)
 	echo "making all targets"
 
 ###############################################

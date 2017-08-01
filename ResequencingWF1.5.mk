@@ -38,7 +38,7 @@ midstr=
 poststr=
 mytmp=/tmp
 builddir=/not set
-tardis_chunksize=2000000
+tardis_chunksize=1000000
 
 #
 #*******************************************************************************************
@@ -117,7 +117,7 @@ tardis_chunksize=2000000
 # ******************************************************************************************
 # other variables (not project specific)
 # ******************************************************************************************
-RUN_TARDIS=tardis.py
+RUN_TARDIS=/home/mccullocha/galaxy/hpc/dev/tardis.py
 RUN_FASTQC=fastqc
 RUN_SAMBAMBA=sambamba
 RUN_SAMTOOLS=samtools
@@ -464,15 +464,19 @@ endif
 .SECONDEXPANSION:
 %.bam:  $(builddir)/$$(basename $$(subst $(poststr),$(midstr)$(p1)$(poststr),$$*)).fastq.quadtrim
 ifndef $(rgvarname) 
-	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
+	$(RUN_TARDIS) -w -d $(tardis_workdir) -c $(tardis_chunksize) bwa mem -t 4 -M $(BWA_reference) _condition_paired_fastq_input_$(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename _condition_paired_fastq_input_$(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \> _condition_sam_output_$@  
 else
-	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\'  $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\'  $(BWA_reference) $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim $(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$@  
+	$(RUN_TARDIS) -w -d $(tardis_workdir) -c $(tardis_chunksize) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\'  $(BWA_reference) _condition_paired_fastq_input_$(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).fastq.quadtrim _condition_paired_fastq_input_$(dir $*)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.quadtrim \> _condition_sam_output_$@  
 endif
 # also handle singletons in this rule 
 ifndef $(rgvarname) 
-	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M $(BWA_reference) $*$(midstr)X.singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$*.singlesbam 
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M $(BWA_reference) $*$(midstr)X.singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$*.singlesbam 
+	$(RUN_TARDIS) -w -d $(tardis_workdir) -c $(tardis_chunksize) bwa mem -t 4 -M $(BWA_reference) _condition_fastq_input_$*$(midstr)X.singlefastq.quadtrim \> _condition_sam_output_$*.singlesbam 
 else
-	$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\' $(BWA_reference) $*$(midstr)X.singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$*.singlesbam 
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\' $(BWA_reference) $*$(midstr)X.singlefastq.quadtrim \| samtools view -bS - \> _condition_wait_output_$*.singlesbam 
+	$(RUN_TARDIS) -w -d $(tardis_workdir) -c $(tardis_chunksize) bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\' $(BWA_reference) _condition_fastq_input_$*$(midstr)X.singlefastq.quadtrim \> _condition_sam_output_$*.singlesbam 
 endif
 
 

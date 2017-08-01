@@ -8,6 +8,7 @@ DRY_RUN=no
 help_text="
  examples : \n
  ./ArchiveBuild1.5.sh  -n -S NZCPWF000001391796 -A /dataset/AG_1000_sheep/archive/2015_processing_results -B /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 -T /dataset/AG_1000_sheep/scratch/PHUAS_processing_052015 \n
+./ArchiveBuild1.5.sh  -S FR07923226 -A /dataset/KCCG/archive/2017_processing_results -B /dataset/KCCG/scratch/kathryn_run  -T /dataset/KCCG/scratch/kathryn_run \n
 "
 
 while getopts ":nhS:B:D:G:T:A:" opt; do

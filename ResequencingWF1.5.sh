@@ -15,7 +15,7 @@ prestr=""
 midstr=""
 poststr=""
 quadtrim_option_set=sheep_set
-tardis_chunksize=2000000
+tardis_chunksize=1000000
 
 help_text="
  examples : \n
@@ -268,6 +268,7 @@ else
 [tardis_engine]
 job_template_name=condor_send_env_job
 shell_template_name=condor_shell
+fast_sequence_input_conditioning=True
 "
       echo "
 [tardish]
@@ -275,6 +276,7 @@ shell_template_name=condor_shell
 [tardis_engine]
 job_template_name=condor_send_env_job
 shell_template_name=condor_shell
+fast_sequence_input_conditioning=True
 " > $TEMP_DIR/.tardishrc
    else
       echo "setting up the following tardis startup file in $TEMP_DIR :"
@@ -285,6 +287,7 @@ shell_template_name=condor_shell
 shell_template_name=local_shell
 max_processes=$THREADS
 hpctype=local
+fast_sequence_input_conditioning=True
 "
       echo "
 [tardish]
@@ -293,6 +296,7 @@ hpctype=local
 shell_template_name=local_shell
 max_processes=$THREADS
 hpctype=local
+fast_sequence_input_conditioning=True
 " > $TEMP_DIR/.tardishrc
    fi
 fi
