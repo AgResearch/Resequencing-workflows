@@ -38,6 +38,7 @@ midstr=
 poststr=
 mytmp=/tmp
 builddir=/not set
+bindir=/not set
 tardis_chunksize=1000000
 
 #
@@ -344,16 +345,21 @@ endif
 # how to make the sample-merged BAM (optionally including removal of duplicates at the sample as opposed to lane level)
 #############################################################################
 %.samplemergedbam: $(lanemergedBAMIncludeList)
-	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMBAMBA) merge -t 8  $*.samplemergedbam_with_duplicates $(lanemergedBAMIncludeList)
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMBAMBA) merge -t 8  $*.samplemergedbam_with_duplicates $(lanemergedBAMIncludeList)
+	# sambamba fails with sambamba-merge: Conversion negative overflow - no obvious reason. Try samtools
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMTOOLS) merge $*.samplemergedbam_with_duplicates $(lanemergedBAMIncludeList)
+	#samtools does not fail but result not usable by gatk - neeed to merge using bamtools and then sort
+	$(RUN_TARDIS) -w -d $(tardis_workdir) $(bindir)/bam_merge_wrapper.sh _condition_wait_output_$*.samplemergedbam_with_duplicates $(lanemergedBAMIncludeList)
+	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMBAMBA) sort --tmpdir=$(mytmp) -t 8 -m 10G  $*.samplemergedbam_with_duplicates -o  _condition_wait_output_$*.sorted_samplemergedbam_with_duplicates 
 	# if removeSubjectDuplicates = n , make the target (and the associated links with .bam suffix) simply by linking to the above.
 	# (GATK only likes .bam or .sam suffices)
 ifeq ($(subst N,n,$(strip $(removeSubjectDuplicates))),n)
-	ln -fs $*.samplemergedbam_with_duplicates $*.samplemergedbam
-	ln -fs $*.samplemergedbam_with_duplicates $*_samplemerged.bam
+	ln -fs $*.sorted_samplemergedbam_with_duplicates $*.samplemergedbam
+	ln -fs $*.sorted_samplemergedbam_with_duplicates $*_samplemerged.bam
 else
 	# or, if required to removeSubjectDuplicates - process the with-duplicates merged file to remove duplicates, and link to that
 	# problem - sambamba fails for very fragmented references ("More than 16383 reference sequences are unsupported")
-	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMTOOLS) rmdup  $*.samplemergedbam_with_duplicates _condition_wait_output_$*.samplemergedbam_no_duplicates
+	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMTOOLS) rmdup  $*.sorted_samplemergedbam_with_duplicates _condition_wait_output_$*.samplemergedbam_no_duplicates
 	ln -fs $*.samplemergedbam_no_duplicates $*.samplemergedbam
 	ln -fs $*.samplemergedbam_no_duplicates $*_samplemerged.bam
 endif
@@ -362,17 +368,26 @@ endif
 
 #############################################################################
 # how to make the lane-merged BAM (optionally including removal of duplicates at this level)
+# (note that we have not every used lanemerging , hence this section is untested)
 #############################################################################
 ifeq ($(strip $(poststr)),)
 .SECONDEXPANSION:
 %.lanemergedbam: %.sortedbam
 	#%.lanemergedbam: %.sortedbam %_RX.singlessortedbam  
-	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMBAMBA) merge -t 8  _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam 
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMBAMBA) merge -t 8  _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam 
+ 	# sambamba fails
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMTOOLS) merge _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam 
+	#samtools does not fail but result not usable by gatk
+	$(RUN_TARDIS) -w -d $(tardis_workdir) $(bindir)/bam_merge_wrapper.sh _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam 
 else
 .SECONDEXPANSION:
 %.lanemergedbam: %.sortedbam    
 	#%.lanemergedbam: %.sortedbam $(builddir)/$$(basename $$(subst $(poststr),$(midstr)X$(poststr),$$*)).singlessortedbam  
-	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMBAMBA) merge -t 8  _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMBAMBA) merge -t 8  _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam
+	#sambamba fails
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_SAMTOOLS) merge _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam
+	#samtools does not fail but result not usable by gatk
+	$(RUN_TARDIS) -w -d $(tardis_workdir) $(bindir)/bam_merge_wrapper.sh _condition_wait_output_$(basename $@).lanemergedbam_with_duplicates $< $*.singlessortedbam
 endif
 	# if removeLaneDuplicates = n , make the target (and the associated links with .bam suffix) simply by linking to the above.
 	# (GATK only likes .bam or .sam suffices)

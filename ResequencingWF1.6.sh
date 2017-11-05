@@ -319,14 +319,15 @@ RGPREFIX='@RG\\tSM:'${SAMPLE}'\\tPL:illumina\\tLB:'${SAMPLE}'\\tCN:AgResearch'
 cp ResequencingWF1.6.mk $TEMP_DIR
 cp get_fastq.sh $TEMP_DIR
 cp quadtrim.sh $TEMP_DIR
+cp bam_merge_wrapper.sh $TEMP_DIR
 cd $TEMP_DIR
 if [ $DRY_RUN != "no" ]; then
    echo "***** dry run only *****"
    set -x
-   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS -n tardis_chunksize=$tardis_chunksize input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS -n tardis_chunksize=$tardis_chunksize input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR bindir=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
 else
    set -x
-   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS tardis_chunksize=$tardis_chunksize input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS tardis_chunksize=$tardis_chunksize input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR bindir=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
 fi
 set +x
 
