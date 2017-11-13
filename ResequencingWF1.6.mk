@@ -118,7 +118,7 @@ tardis_chunksize=1000000
 # ******************************************************************************************
 # other variables (not project specific)
 # ******************************************************************************************
-RUN_TARDIS=tardis.py
+RUN_TARDIS=tardis.py -hpctype $(hpctype) 
 RUN_FASTQC=fastqc
 RUN_SAMBAMBA=sambamba
 RUN_SAMTOOLS=samtools

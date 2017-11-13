@@ -123,8 +123,8 @@ function check_opts() {
     echo "must specify sample name using -S option"
     exit 1
   fi
-  if [[ "$HPCTYPE" != "condor" && "$HPCTYPE" != "local" ]]; then
-    echo "hpctype must be condor or local"
+  if [[ "$HPCTYPE" != "condor" && "$HPCTYPE" != "local" && "$HPCTYPE" != "slurm" ]]; then
+    echo "hpctype must be condor , local or slurm"
     exit 1
   fi
   if [ $INPUT_METHOD == "sra" ]; then
@@ -288,7 +288,7 @@ job_template_name=condor_send_env_job
 shell_template_name=condor_shell
 fast_sequence_input_conditioning=True
 " > $TEMP_DIR/.tardishrc
-   else
+   elif [ $HPCTYPE == "local" ]; then 
       echo "setting up the following tardis startup file in $TEMP_DIR :"
       echo "
 [tardish]
@@ -324,10 +324,10 @@ cd $TEMP_DIR
 if [ $DRY_RUN != "no" ]; then
    echo "***** dry run only *****"
    set -x
-   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS -n tardis_chunksize=$tardis_chunksize input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR bindir=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS -n tardis_chunksize=$tardis_chunksize hpctype=$HPCTYPE input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR bindir=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
 else
    set -x
-   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS tardis_chunksize=$tardis_chunksize input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR bindir=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
+   make -f ResequencingWF1.6.mk -d --no-builtin-rules -j $THREADS tardis_chunksize=$tardis_chunksize hpctype=$HPCTYPE input_method=$INPUT_METHOD BWA_reference=$REF_GENOME QUADTRIM_WRAPPER=$TEMP_DIR/quadtrim.sh quadtrim_option_set=$quadtrim_option_set dd=$DATA_DIR p1=$p1 p2=$p2 prestr=$prestr midstr=$midstr poststr=$poststr rgprefix=${RGPREFIX} mytmp=$TEMP_DIR bindir=$TEMP_DIR builddir=$BUILD_DIR removeSubjectDuplicates=y removeLaneDuplicates=n  lanemergedBAMIncludeList="${moniker_string}" ${BUILD_DIR}/${SAMPLE}.$make_target > ${SAMPLE}.log 2>&1
 fi
 set +x
 
