@@ -493,7 +493,7 @@ ifndef $(rgvarname)
 else
 	$(RUN_TARDIS) -w -c $(tardis_chunksize) -d $(tardis_workdir) $(QUADTRIM_WRAPPER) _condition_paired_fastq_input_$< _condition_paired_fastq_input_$(builddir)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).fastq.gz  $(QUADTRIM) $($(quadtrim_option_set)) _condition_text_product_.quadtrim.stdout,$(builddir)/$(basename $(subst $(poststr),$(midstr)X$(poststr),$(notdir $*))).quadtrim.stdout _condition_text_product_.quadtrim.stderr,$(builddir)/$(basename $(subst $(poststr),$(midstr)X$(poststr),$(notdir $*))).quadtrim.stderr \;  bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\'  $(BWA_reference) _condition_throughput_$(builddir)/$(basename $(subst $(poststr),$(midstr)$(p1)$(poststr),$(notdir $*))).pass _condition_throughput_$(builddir)/$(basename $(subst $(poststr),$(midstr)$(p2)$(poststr),$(notdir $*))).pass \> _condition_sam_output_$@  \; bwa mem -t 4 -M -R \'$($(rgvarname))\\tID:$(*F)\\tPU:$(*F)\' $(BWA_reference) _condition_throughput_$(builddir)/$(basename $(subst $(poststr),$(midstr)X$(poststr),$(notdir $*))).pass \> _condition_sam_output_$*.singlesbam
 endif
-	mv $@.bam $@
+	#mv $@.bam $@
 	mv $*.singlesbam.bam $*.singlesbam
 
 
