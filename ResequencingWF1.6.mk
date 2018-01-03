@@ -119,7 +119,6 @@ tardis_chunksize=1000000
 # other variables (not project specific)
 # ******************************************************************************************
 RUN_TARDIS=tardis.py -hpctype $(hpctype) 
-RUN_FASTQC=fastqc
 RUN_SAMBAMBA=sambamba
 RUN_SAMTOOLS=samtools
 RUN_JAVA=java
@@ -153,10 +152,6 @@ BWA_reference=not set
 	echo "get_fastq" > $*.logprecis
 	echo "---------" >> $*.logprecis
 	egrep "^$(GET_FASTQ)" $*.log >> $*.logprecis
-
-	echo "fastqc" >> $*.logprecis
-	echo "------" >> $*.logprecis
-	egrep "^$(RUN_FASTQC)" $*.log >> $*.logprecis
 
 	echo "quadtrim" >> $*.logprecis
 	echo "-------" >> $*.logprecis
@@ -232,10 +227,6 @@ BWA_reference=not set
 	echo "----"  >> versions.log
 	echo $(RUN_JAVA) -version  >> versions.log
 	$(RUN_JAVA) -version  >> versions.log 2>&1
-	echo "fastqc"  >> versions.log
-	echo "------"  >> versions.log
-	echo $(RUN_FASTQC) -version  >> versions.log
-	$(RUN_FASTQC) -version  >> versions.log  2>&1
 	echo rpm -q fastqc >> versions.log
 	rpm -q fastqc >> versions.log 2>&1
 	echo "sambamba"  >> versions.log

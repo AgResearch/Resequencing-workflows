@@ -136,9 +136,14 @@ function check_opts() {
     echo "make target must be bams or all"
     exit 1
   fi
-
-
-
+  #if [ -z "$GATK_LITE_JAR" ]; then
+  #   echo "GATK_LITE_JAR not set - should be path to gatk jar file"
+  #   exit 1
+  #fi
+  #if [ ! -f $GATK_LITE_JAR ]; then
+  #   echo "file $GATK_LITE_JAR not found"
+  #   exit 1
+  #fi
 }
 
 function echo_opts() {
@@ -160,34 +165,34 @@ function echo_opts() {
 # before running this script)
 #
 function configure_env() {
-  if [ -d /usr/lib64/samtools0119/bin ]; then
-     module load samtools/0.1.19
-  else
-     echo "assuming environment has path to samtools 0.1.19 or equivalent"
-  fi
+  #if [ -d /usr/lib64/samtools0119/bin ]; then
+  #   module load samtools/0.1.19
+  #else
+  #   echo "assuming environment has path to samtools 0.1.19 or equivalent"
+  #fi
 
-  if [ -f /dataset/AG_1000_bulls/active/bin/sambamba ]; then
-     PATH=$PATH:/dataset/AG_1000_bulls/active/bin
-  else
-     echo "assuming environment has path to sambamba"
-  fi
+  #if [ -f /dataset/AG_1000_bulls/active/bin/sambamba ]; then
+  #   PATH=$PATH:/dataset/AG_1000_bulls/active/bin
+  #else
+  #   echo "assuming environment has path to sambamba"
+  #fi
      
-  if [ -f /dataset/hiseq/active/bin/quadtrim ]; then
-     PATH=$PATH:/dataset/hiseq/active/bin
-  else
-     echo "assuming environment has path to quadtrim"
-  fi
+  #if [ -f /dataset/hiseq/active/bin/quadtrim ]; then
+  #   PATH=$PATH:/dataset/hiseq/active/bin
+  #else
+  #   echo "assuming environment has path to quadtrim"
+  #fi
 
-  if [ -f /dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar  ]; then
-     GATK_LITE_JAR=/dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar
-     export GATK_LITE_JAR
-  else
-     echo "assuming environment has GATK_LITE_JAR containing path to  GenomeAnalysisTKLite.jar"
-  fi
+  #if [ -f /dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar  ]; then
+  #   GATK_LITE_JAR=/dataset/AFC_dairy_cows/archive/GenomeAnalysisTKLite-2.3-9-gdcdccbb/GenomeAnalysisTKLite.jar
+  #   export GATK_LITE_JAR
+  #else
+  #   echo "assuming environment has GATK_LITE_JAR containing path to  GenomeAnalysisTKLite.jar"
+  #fi
 
-  echo "configured the following environment variables :"
-  echo "PATH=$PATH"
-  echo "GATK_LITE_JAR=$GATK_LITE_JAR"
+  #echo "configured the following environment variables :"
+  #echo "PATH=$PATH"
+  #echo "GATK_LITE_JAR=$GATK_LITE_JAR"
 
   TEMP_DIR=$TEMP_ROOT/${SAMPLE}tmp
   BUILD_DIR=$BUILD_ROOT/${SAMPLE}
@@ -271,11 +276,20 @@ if [ -f .tardishrc ]; then
    cp  .tardishrc $TEMP_DIR
 else
    if [ $HPCTYPE == "condor" ]; then
+     echo "setting up the following job include file in $TEMP_DIR/runtimeconfig.txt :"
+     echo '
+     cd $hpcdir # needed as cannot specify an absolute path to quadtrim
+     '
+     echo '
+     cd $hpcdir # needed as cannot specify an absolute path to quadtrim
+     ' > $TEMP_DIR/runtimeconfig.txt
+
       echo "setting up the following tardis startup file in $TEMP_DIR :"
       echo "
 [tardish]
 
 [tardis_engine]
+runtimeconfigsourcefile=$TEMP_DIR/runtimeconfig.txt
 job_template_name=condor_send_env_job
 shell_template_name=condor_shell
 fast_sequence_input_conditioning=True
@@ -284,16 +298,26 @@ fast_sequence_input_conditioning=True
 [tardish]
 
 [tardis_engine]
+runtimeconfigsourcefile=$TEMP_DIR/runtimeconfig.txt
 job_template_name=condor_send_env_job
 shell_template_name=condor_shell
 fast_sequence_input_conditioning=True
 " > $TEMP_DIR/.tardishrc
    elif [ $HPCTYPE == "local" ]; then 
+      echo "setting up the following job include file in $TEMP_DIR/runtimeconfig.txt :"
+      echo '
+      cd $hpcdir # needed as cannot specify an absolute path to quadtrim
+      '
+      echo '
+      cd $hpcdir # needed as cannot specify an absolute path to quadtrim
+      ' > $TEMP_DIR/runtimeconfig.txt
+
       echo "setting up the following tardis startup file in $TEMP_DIR :"
       echo "
 [tardish]
 
 [tardis_engine]
+runtimeconfigsourcefile=$TEMP_DIR/runtimeconfig.txt
 shell_template_name=local_shell
 max_processes=$THREADS
 hpctype=local
@@ -303,11 +327,29 @@ fast_sequence_input_conditioning=True
 [tardish]
 
 [tardis_engine]
+runtimeconfigsourcefile=$TEMP_DIR/runtimeconfig.txt
 shell_template_name=local_shell
 max_processes=$THREADS
 hpctype=local
 fast_sequence_input_conditioning=True
 " > $TEMP_DIR/.tardishrc
+   elif [ $HPCTYPE == "slurm" ]; then
+echo "setting up the following job include file in $TEMP_DIR :"
+echo '
+cd $hpcdir # needed as cannot specify an absolute path to quadtrim
+source activate /dataset/bioinformatics_dev/active/resequencing_cust
+' 
+echo '
+cd $hpcdir # needed as cannot specify an absolute path to quadtrim
+source activate /dataset/bioinformatics_dev/active/resequencing_cust 
+' > $TEMP_DIR/runtimeconfig.txt
+echo "[tardish]
+
+[tardis_engine]
+runtimeconfigsourcefile=$TEMP_DIR/runtimeconfig.txt
+" > $TEMP_DIR/.tardishrc
+
+
    fi
 fi
 
