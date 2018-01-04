@@ -283,14 +283,14 @@ BWA_reference=not set
 # as well as the coverage.sample_summary file)
 ###############################################
 %.coverage.sample_summary: %.realignedbam
-	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_JAVA) -Xmx4G -jar -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) -T DepthOfCoverage -R $(BWA_reference) -I $*_realigned.bam --omitDepthOutputAtEachBase --logging_level ERROR --summaryCoverageThreshold 10 --summaryCoverageThreshold 20 --summaryCoverageThreshold 30 --summaryCoverageThreshold 40 --summaryCoverageThreshold 50 --summaryCoverageThreshold 80 --summaryCoverageThreshold 90 --summaryCoverageThreshold 100 --summaryCoverageThreshold 150 --minBaseQuality 15 --minMappingQuality 30 --start 1 --stop 1000 --nBins 999 -dt NONE -o _condition_wait_output_$@
+	$(RUN_TARDIS) -w -d $(tardis_workdir) $(RUN_JAVA) -Xmx4G -Djava.io.tmpdir=$(mytmp) -jar $(GATK_LITE_JAR) -T DepthOfCoverage -R $(BWA_reference) -I $*_realigned.bam --omitDepthOutputAtEachBase --logging_level ERROR --summaryCoverageThreshold 10 --summaryCoverageThreshold 20 --summaryCoverageThreshold 30 --summaryCoverageThreshold 40 --summaryCoverageThreshold 50 --summaryCoverageThreshold 80 --summaryCoverageThreshold 90 --summaryCoverageThreshold 100 --summaryCoverageThreshold 150 --minBaseQuality 15 --minMappingQuality 30 --start 1 --stop 1000 --nBins 999 -dt NONE -o _condition_wait_output_$@
 
 ###############################################
 # how to make the vcf
 ###############################################
 %.vcf: %.realignedbam
-	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cvg - > $*.vcf 
-	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -N -cvg - \> _condition_wait_output_$@ 
+	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -v snps - > $*.vcf 
+	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -v snps - \> _condition_wait_output_$@ 
 
 
 ###############################################
@@ -300,8 +300,8 @@ BWA_reference=not set
 # vcf build so it includes all positions ?)
 ###############################################
 %.fullvcf: %.realignedbam
-	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -N -cg - > $*.fullvcf
-	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -N -cg - \> _condition_wait_output_$*.fullvcf
+	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -v snps - > $*.fullvcf
+	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -v snps - \> _condition_wait_output_$*.fullvcf
 
 
 
