@@ -363,6 +363,20 @@ cp get_fastq.sh $TEMP_DIR
 cp quadtrim.sh $TEMP_DIR
 cp bam_merge_wrapper.sh $TEMP_DIR
 cd $TEMP_DIR
+
+# we need the path to GATK in order to generate the run-time wrapper scripts but only know this at run time - so launch a job to get it
+set -x
+GATK_LITE_JAR=`tardis.py -q -hpctype $HPCTYPE echo '$GATK_LITE_JAR'`
+export GATK_LITE_JAR
+set +x
+
+if [ ! -f "$GATK_LITE_JAR" ]; then
+   echo "unable to get path to gatk from run time environment - quitting"
+   exit 1
+else
+   echo "using gatk jar at $GATK_LITE_JAR"
+fi
+
 if [ $DRY_RUN != "no" ]; then
    echo "***** dry run only *****"
    set -x
