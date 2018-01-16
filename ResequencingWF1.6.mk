@@ -291,7 +291,8 @@ BWA_reference=not set
 ###############################################
 %.vcf: %.realignedbam
 	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -v snps - > $*.vcf 
-	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -v snps - \> _condition_wait_output_$@ 
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -v snps - \> _condition_wait_output_$@ 
+	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools call -cv - \> _condition_wait_output_$@ 
 
 
 ###############################################
@@ -302,7 +303,8 @@ BWA_reference=not set
 ###############################################
 %.fullvcf: %.realignedbam
 	#samtools mpileup -ugf $(BWA_reference) $*_realigned.bam | bcftools view -v snps - > $*.fullvcf
-	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -v snps - \> _condition_wait_output_$*.fullvcf
+	#$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools view -v snps - \> _condition_wait_output_$*.fullvcf
+	$(RUN_TARDIS) -w -d $(tardis_workdir) samtools mpileup -q 20 -ugf $(BWA_reference) $*_realigned.bam \| bcftools call -cv - \> _condition_wait_output_$*.fullvcf
 
 
 
